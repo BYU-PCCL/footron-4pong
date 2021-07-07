@@ -1,5 +1,6 @@
 /**
  * Modified code from Steven Lambert (@straker) from CodePen
+ * https://codepen.io/straker/pen/VazMaL
  * Used under MIT Licensing
  * 
  * Pong code taken from http://codegolf.stackexchange.com/questions/10713/pong-in-the-shortest-code
@@ -22,15 +23,21 @@
  *
  */
 
+wallSize = 1000;
 context = document.getElementById('c').getContext('2d');
+document.getElementById('c').width = wallSize;
+document.getElementById('c').height = wallSize;
 context.fillStyle = "#FFF";
 context.font = "60px monospace";
 paused = start = 1;
 livesL = livesR = livesU = livesD = 3;
 resetPositions();
-ballX = 300; ballY = 235;
+ballX = ballY = wallSize;
 ballVX = -5; ballVY = 3;
-wallSize = 640;
+
+
+
+
 moveSpd = 10;
 aliveL = aliveR = aliveU = aliveD = true;
 winner = "";
@@ -38,7 +45,7 @@ auto = false;
 // wallX = 640; wallY = 640;
 setInterval(function () {
     if(winner == ""){
-        if (paused && !start && winner == "") return; 
+        if (paused && !start && winner == "" && !auto) return; 
         start = 0;
         context.clearRect(0, 0, wallSize, wallSize);
         
@@ -112,10 +119,10 @@ setInterval(function () {
     }
     context.fillRect(ballX, ballY, 10, 10);
         if(winner != ""){
-            context.fillText("Winner is: " + winner, 100,200);
+            context.fillText("Winner is: " + winner, (100/640)*wallSize,200/640)*wallSize;
         }
-        context.fillText(Math.floor(ballX) + "," + Math.floor(ballY), 340, 550);
-        context.fillText(Math.floor(ballVX) + "," + Math.floor(ballVY), 400, 610);
+        context.fillText(Math.floor(ballX) + "," + Math.floor(ballY), (340/640)*wallSize, (550/640)*wallSize);
+        context.fillText(Math.floor(ballVX) + "," + Math.floor(ballVY), (400/640)*wallSize, (610/640)*wallSize);
     
     
 }, 15) // Speed 15
@@ -185,9 +192,11 @@ function resetPositions(){
     paddleVL = paddleVR = paddleVU = paddleVD = 0;
 }
 
+paddleThickness = (20/640)*wallSize;
+
 function bouncing(){
     if(livesL > 0){
-        if (ballX <= 40 && ballX >= 20 && ballY < paddleYL + 110 && ballY > paddleYL - 10) {
+        if (ballX <= (40/640)*wallSize && ballX >= (20/640)*wallSize && ballY < paddleYL + (110/640)*wallSize && ballY > paddleYL - (10/640)*wallSize) {
             ballVX = -ballVX + 0.2; 
             ballVY += (ballY - paddleYL - 45) / 20;
         }
@@ -199,7 +208,7 @@ function bouncing(){
     }
 
     if(livesR > 0){
-        if (ballX <= 610 && ballX >= 590 && ballY < paddleYR + 110 && ballY > paddleYR - 10) {
+        if (ballX <= (610/640)*wallSize && ballX >= (590/640)*wallSize && ballY < paddleYR + (110/640)*wallSize && ballY > paddleYR - (10/640)*wallSize) {
             ballVX = -ballVX - 0.2; 
             ballVY += (ballY - paddleYR - 45) / 20;
         }
@@ -211,7 +220,7 @@ function bouncing(){
     }
 
     if(livesU > 0){
-        if (ballY <= 40 && ballY >= 20 && ballX < paddleXU + 110 && ballX > paddleXU - 10) {
+        if (ballY <= (40/640)*wallSize && ballY >= (20/640)*wallSize && ballX < paddleXU + (110/640)*wallSize && ballX > paddleXU - (10/640)*wallSize) {
             ballVY = -ballVY + 0.2; 
             ballVX += (ballX - paddleXU - 45) / 20;
         }
@@ -222,7 +231,7 @@ function bouncing(){
         }
     }
     if(livesD > 0){
-        if (ballY <= 610 && ballY >= 590 && ballX < paddleXD + 110 && ballX > paddleXD - 10) {
+        if (ballY <= (610/640)*wallSize && ballY >= (590/640)*wallSize && ballX < paddleXD + (110/640)*wallSize && ballX > paddleXD - (10/640)*wallSize) {
             ballVY = -ballVY - 0.2; 
             ballVX += (ballX - paddleXD - 45) / 20;
         }
@@ -236,38 +245,38 @@ function bouncing(){
 
 function buildPaddles(){
     if(livesL > 0){
-        context.fillRect(20, paddleYL, 20, 100);
+        context.fillRect((20/640)*wallSize, paddleYL, (20/640)*wallSize, (100/640)*wallSize);
     }
     if(livesR > 0){
-        context.fillRect(600, paddleYR, 20, 100);
+        context.fillRect((600/640)*wallSize, paddleYR, (20/640)*wallSize, (100/640)*wallSize);
     }
     if(livesU > 0){
-        context.fillRect(paddleXU, 20, 100, 20);
+        context.fillRect(paddleXU, (20/640)*wallSize, (100/640)*wallSize, (20/640)*wallSize);
     }
     if(livesD > 0){
-        context.fillRect(paddleXD, 600, 100, 20);
+        context.fillRect(paddleXD, (600/640)*wallSize, (100/640)*wallSize, (20/640)*wallSize);
     }
 }
 
 function displayLives(){
     if(livesL > 0){
-        context.fillText(livesL, 250, 350);
+        context.fillText(livesL, (250/640)*wallSize, (350/640)*wallSize);
     }
     if(livesR > 0){
-        context.fillText(livesR, 360, 350);
+        context.fillText(livesR, (360/640)*wallSize, (350/640)*wallSize);
     }
     if(livesU > 0){
-        context.fillText(livesU, 284, 100);
+        context.fillText(livesU, (284/640)*wallSize, (100/640)*wallSize);
     }
     if(livesD > 0){
-        context.fillText(livesD, 284, 500);
+        context.fillText(livesD, (284/640)*wallSize, (500/640)*wallSize);
     }
     
 }
 
 function lifeTracking(){
     if(livesL > 0){
-        if (ballX < -10) {
+        if (ballX < (-10/640)*wallSize) {
             livesL--; 
             if(livesL > 0){
                 ballX = 90; 
@@ -281,7 +290,7 @@ function lifeTracking(){
     }
 
     if(livesR > 0){
-        if (ballX > 630) {
+        if (ballX > (630/640)*wallSize) {
             livesR--; 
             if(livesR > 0){
                 ballX = 540; 
@@ -294,7 +303,7 @@ function lifeTracking(){
     } 
 
     if(livesU > 0){
-        if (ballY < -10) {
+        if (ballY < (-10/640)*wallSize) {
             livesU--; 
             if(livesU > 0){
                 ballX = wallSize/2; 
@@ -307,7 +316,7 @@ function lifeTracking(){
     } 
 
     if(livesD > 0){
-        if (ballY > 630) {
+        if (ballY > (630/640)*wallSize) {
             livesD--; 
         
             if(livesD > 0){
