@@ -1,0 +1,18 @@
+/*
+Modified code from Steven Lambert (@straker) from CodePen
+https://codepen.io/straker/pen/VazMaL
+Used under MIT Licensing
+*/
+
+body {
+  background: black;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+
+canvas {
+  outline: 1px solid white;
+}
