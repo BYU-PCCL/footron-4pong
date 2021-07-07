@@ -10,6 +10,7 @@
 
 /**
  * TODO
+ *  - URGENT: Fix the bouncing boundaries
  *  - Have border
  *  - Colors?
  *  - implement pauses before restart
@@ -23,7 +24,8 @@
  *
  */
 
-wallSize = 1000;
+wallSize = 1200;
+modifier = wallSize / 640;
 context = document.getElementById('c').getContext('2d');
 document.getElementById('c').width = wallSize;
 document.getElementById('c').height = wallSize;
@@ -42,7 +44,6 @@ moveSpd = 10;
 aliveL = aliveR = aliveU = aliveD = true;
 winner = "";
 auto = false;
-// wallX = 640; wallY = 640;
 setInterval(function () {
     if(winner == ""){
         if (paused && !start && winner == "" && !auto) return; 
@@ -64,16 +65,16 @@ setInterval(function () {
         
         // stopping paddle at wall logic
         paddleYL = paddleYL < 0 ? 0 : paddleYL; 
-        paddleYL = paddleYL > wallSize - 100 ? wallSize - 100 : paddleYL;
+        paddleYL = paddleYL > wallSize - 100 * modifier ? wallSize - 100 * modifier : paddleYL;
         
         paddleYR = paddleYR < 0 ? 0 : paddleYR; 
-        paddleYR = paddleYR > wallSize - 100 ? wallSize - 100 : paddleYR;
+        paddleYR = paddleYR > wallSize - 100 * modifier ? wallSize - 100 * modifier : paddleYR;
 
         paddleXU = paddleXU < 0 ? 0 : paddleXU; 
-        paddleXU = paddleXU > wallSize - 100 ? wallSize - 100 : paddleXU;
+        paddleXU = paddleXU > wallSize - 100 * modifier ? wallSize - 100 * modifier : paddleXU;
 
         paddleXD = paddleXD < 0 ? 0 : paddleXD; 
-        paddleXD = paddleXD > wallSize - 100 ? wallSize - 100 : paddleXD;
+        paddleXD = paddleXD > wallSize - 100 * modifier ? wallSize - 100 * modifier : paddleXD;
         
         // Ball physics
         ballX += ballVX; 
@@ -101,9 +102,9 @@ setInterval(function () {
         
     } else {
         if(!restart){
-            context.fillText("Winner is: " + winner, 100,200);
+            context.fillText("Winner is: " + winner, 100 * modifier,200 * modifier);
             delay(6)
-            context.fillText("Play Again?", 170,300);
+            context.fillText("Play Again?", 170 * modifier,300 * modifier);
             if(auto){
                 livesL = livesR = livesU = livesD = 3;
             resetPositions();
@@ -117,12 +118,12 @@ setInterval(function () {
             buildPaddles();
         }
     }
-    context.fillRect(ballX, ballY, 10, 10);
+    context.fillRect(ballX, ballY, 10 * modifier, 10 * modifier);
         if(winner != ""){
-            context.fillText("Winner is: " + winner, (100/640)*wallSize,200/640)*wallSize;
+            context.fillText("Winner is: " + winner, 100 * modifier,200 * modifier);
         }
-        context.fillText(Math.floor(ballX) + "," + Math.floor(ballY), (340/640)*wallSize, (550/640)*wallSize);
-        context.fillText(Math.floor(ballVX) + "," + Math.floor(ballVY), (400/640)*wallSize, (610/640)*wallSize);
+        // context.fillText(Math.floor(ballX) + "," + Math.floor(ballY), 340 * modifier, 550 * modifier);
+        // context.fillText(Math.floor(ballVX) + "," + Math.floor(ballVY), 400 * modifier, 610 * modifier);
     
     
 }, 15) // Speed 15
@@ -188,15 +189,13 @@ ballY -> ball ballY
 
 function resetPositions(){
     // paused = 1;
-    paddleYL = paddleYR = paddleXU = paddleXD= 270;
+    paddleYL = paddleYR = paddleXU = paddleXD= 270 * modifier;
     paddleVL = paddleVR = paddleVU = paddleVD = 0;
 }
 
-paddleThickness = (20/640)*wallSize;
-
 function bouncing(){
     if(livesL > 0){
-        if (ballX <= (40/640)*wallSize && ballX >= (20/640)*wallSize && ballY < paddleYL + (110/640)*wallSize && ballY > paddleYL - (10/640)*wallSize) {
+        if (ballX <= (40 * modifier && ballX >= 20 * modifier && ballY < paddleYL + 110 * modifier && ballY > paddleYL - 10 * modifier)) {
             ballVX = -ballVX + 0.2; 
             ballVY += (ballY - paddleYL - 45) / 20;
         }
@@ -208,7 +207,7 @@ function bouncing(){
     }
 
     if(livesR > 0){
-        if (ballX <= (610/640)*wallSize && ballX >= (590/640)*wallSize && ballY < paddleYR + (110/640)*wallSize && ballY > paddleYR - (10/640)*wallSize) {
+        if (ballX <= 610 * modifier && ballX >= 590 * modifier && ballY < paddleYR + 110 * modifier && ballY > paddleYR - 10 * modifier) {
             ballVX = -ballVX - 0.2; 
             ballVY += (ballY - paddleYR - 45) / 20;
         }
@@ -220,7 +219,7 @@ function bouncing(){
     }
 
     if(livesU > 0){
-        if (ballY <= (40/640)*wallSize && ballY >= (20/640)*wallSize && ballX < paddleXU + (110/640)*wallSize && ballX > paddleXU - (10/640)*wallSize) {
+        if (ballY <= 40 * modifier && ballY >= 20 * modifier && ballX < paddleXU + 110 * modifier && ballX > paddleXU - 10 * modifier) {
             ballVY = -ballVY + 0.2; 
             ballVX += (ballX - paddleXU - 45) / 20;
         }
@@ -231,7 +230,7 @@ function bouncing(){
         }
     }
     if(livesD > 0){
-        if (ballY <= (610/640)*wallSize && ballY >= (590/640)*wallSize && ballX < paddleXD + (110/640)*wallSize && ballX > paddleXD - (10/640)*wallSize) {
+        if (ballY <= 610 * modifier && ballY >= 590 * modifier && ballX < paddleXD + 110 * modifier && ballX > paddleXD - 10 * modifier) {
             ballVY = -ballVY - 0.2; 
             ballVX += (ballX - paddleXD - 45) / 20;
         }
@@ -245,38 +244,38 @@ function bouncing(){
 
 function buildPaddles(){
     if(livesL > 0){
-        context.fillRect((20/640)*wallSize, paddleYL, (20/640)*wallSize, (100/640)*wallSize);
+        context.fillRect(20 * modifier, paddleYL, 20 * modifier, 100 * modifier);
     }
     if(livesR > 0){
-        context.fillRect((600/640)*wallSize, paddleYR, (20/640)*wallSize, (100/640)*wallSize);
+        context.fillRect(600 * modifier, paddleYR, 20 * modifier, 100 * modifier);
     }
     if(livesU > 0){
-        context.fillRect(paddleXU, (20/640)*wallSize, (100/640)*wallSize, (20/640)*wallSize);
+        context.fillRect(paddleXU, 20 * modifier, 100 * modifier, 20 * modifier);
     }
     if(livesD > 0){
-        context.fillRect(paddleXD, (600/640)*wallSize, (100/640)*wallSize, (20/640)*wallSize);
+        context.fillRect(paddleXD, 600 * modifier, 100 * modifier, 20 * modifier);
     }
 }
 
 function displayLives(){
     if(livesL > 0){
-        context.fillText(livesL, (250/640)*wallSize, (350/640)*wallSize);
+        context.fillText(livesL, 250 * modifier, 350 * modifier);
     }
     if(livesR > 0){
-        context.fillText(livesR, (360/640)*wallSize, (350/640)*wallSize);
+        context.fillText(livesR, 360 * modifier, 350 * modifier);
     }
     if(livesU > 0){
-        context.fillText(livesU, (284/640)*wallSize, (100/640)*wallSize);
+        context.fillText(livesU, 284 * modifier, 100 * modifier);
     }
     if(livesD > 0){
-        context.fillText(livesD, (284/640)*wallSize, (500/640)*wallSize);
+        context.fillText(livesD, 284 * modifier, 500 * modifier);
     }
     
 }
 
 function lifeTracking(){
     if(livesL > 0){
-        if (ballX < (-10/640)*wallSize) {
+        if (ballX < -10 * modifier) {
             livesL--; 
             if(livesL > 0){
                 ballX = 90; 
@@ -290,7 +289,7 @@ function lifeTracking(){
     }
 
     if(livesR > 0){
-        if (ballX > (630/640)*wallSize) {
+        if (ballX > 630 * modifier) {
             livesR--; 
             if(livesR > 0){
                 ballX = 540; 
@@ -303,7 +302,7 @@ function lifeTracking(){
     } 
 
     if(livesU > 0){
-        if (ballY < (-10/640)*wallSize) {
+        if (ballY < -10 * modifier) {
             livesU--; 
             if(livesU > 0){
                 ballX = wallSize/2; 
@@ -316,7 +315,7 @@ function lifeTracking(){
     } 
 
     if(livesD > 0){
-        if (ballY > (630/640)*wallSize) {
+        if (ballY > 630 * modifier) {
             livesD--; 
         
             if(livesD > 0){
@@ -376,7 +375,7 @@ function delay(n){
 function autoplay(){
     auto = true;
     range = 25
-        // && ballVX > 0
+        // && ballVX > 0 TODO: fix this for scaling
         if(paddleYL + 50 - range < ballY && paddleYL + 50 + range > ballY){
             paddleVL = 0;
         } else 
@@ -427,6 +426,6 @@ function autoplay(){
 
 function crazymode(){
     auto = true;
-    paddleYL = paddleYR = ballY - 50;
-    paddleXU = paddleXD = ballX - 50;
+    paddleYL = paddleYR = ballY - (50 * modifier);
+    paddleXU = paddleXD = ballX - 50 * modifier;
 }
