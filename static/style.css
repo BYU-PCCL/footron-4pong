@@ -11,7 +11,12 @@ body {
   justify-content: center;
 }
 
-
+.lives {
+  color: white;
+  font-size: 75px;
+  text-align: center;
+  user-select: none;
+}
 
 canvas {
   outline: 1px solid white;

@@ -10,21 +10,20 @@
 
 /**
  * TODO
- *  - URGENT: Fix the bouncing boundaries
- *  - Have border
- *  - Colors?
  *  - implement pauses before restart
- *  - Equalize X and Y movement
  */
 
 /**
  * Done
- *  - Kiosk/Display Mode
- *  - Crazy Miode
+ *  - Colors
+ *  - Border/lives placement outside
+ *  - Fix bouncing coundaries
+ *  - Equalize X/Y Movement
+ *  - 
  *
  */
-
-wallSize = 1200;
+windowSize = window.innerHeight * .75;
+wallSize = windowSize;
 modifier = wallSize / 640;
 context = document.getElementById('c').getContext('2d');
 document.getElementById('c').width = wallSize;
@@ -34,13 +33,23 @@ context.font = "60px monospace";
 paused = start = 1;
 livesL = livesR = livesU = livesD = 3;
 resetPositions();
-ballX = ballY = wallSize;
-ballVX = -5; ballVY = 3;
+ballX = getRandomArbitrary(wallSize * .2, wallSize * .8);
+ballY = getRandomArbitrary(wallSize * .2, wallSize * .8);
+ballVX = 7 * modifier; 
+ballVY = 7 * modifier;
+if (ballX > wallSize/2){
+    ballVX = - ballVX;
+} 
+if (ballY > wallSize/2){
+    ballVY = - ballVY;
+} 
+// ballVX = -1 * getRandomArbitrary(4,8) * modifier; 
+// ballVY = 1 * getRandomArbitrary(4,8) * modifier;
 
 
 
 
-moveSpd = 10;
+moveSpd = 10 * modifier;
 aliveL = aliveR = aliveU = aliveD = true;
 winner = "";
 auto = false;
@@ -51,12 +60,15 @@ setInterval(function () {
         context.clearRect(0, 0, wallSize, wallSize);
         
         // dashed lines
+        context.beginPath();
+        context.fillStyle = "white";
         for (lineCounter = 5; lineCounter < wallSize; lineCounter += 20)
             context.fillRect(wallSize/2, lineCounter, 4, 10);
 
         for (lineCounter = 5; lineCounter < wallSize; lineCounter += 20)
             context.fillRect(lineCounter , wallSize/2, 10, 4);
             
+        context.closePath();
         // Paddle movement logic
         paddleYL += paddleVL; 
         paddleYR += paddleVR;
@@ -102,9 +114,13 @@ setInterval(function () {
         
     } else {
         if(!restart){
+            context.beginPath();
+            context.fillStyle = "white";
             context.fillText("Winner is: " + winner, 100 * modifier,200 * modifier);
             delay(6)
             context.fillText("Play Again?", 170 * modifier,300 * modifier);
+            context.closePath();
+
             if(auto){
                 livesL = livesR = livesU = livesD = 3;
             resetPositions();
@@ -118,11 +134,20 @@ setInterval(function () {
             buildPaddles();
         }
     }
+    context.beginPath();
+    context.fillStyle = "white";
+    context.closePath();
     context.fillRect(ballX, ballY, 10 * modifier, 10 * modifier);
         if(winner != ""){
+            context.beginPath();
+            context.fillStyle = "white";
             context.fillText("Winner is: " + winner, 100 * modifier,200 * modifier);
+            context.closePath();
         }
+        // location
         // context.fillText(Math.floor(ballX) + "," + Math.floor(ballY), 340 * modifier, 550 * modifier);
+        
+        // speed
         // context.fillText(Math.floor(ballVX) + "," + Math.floor(ballVY), 400 * modifier, 610 * modifier);
     
     
@@ -195,9 +220,9 @@ function resetPositions(){
 
 function bouncing(){
     if(livesL > 0){
-        if (ballX <= (40 * modifier && ballX >= 20 * modifier && ballY < paddleYL + 110 * modifier && ballY > paddleYL - 10 * modifier)) {
-            ballVX = -ballVX + 0.2; 
-            ballVY += (ballY - paddleYL - 45) / 20;
+        if (ballX <= 40 * modifier && ballX >= 20 * modifier && ballY < paddleYL + 110 * modifier && ballY > paddleYL - 10 * modifier) {
+            ballVX = -ballVX + 0.05; 
+            ballVY += (ballY - paddleYL - 45 * modifier) / 20;
         }
     } else {
         if (ballX <= 0) {
@@ -208,8 +233,8 @@ function bouncing(){
 
     if(livesR > 0){
         if (ballX <= 610 * modifier && ballX >= 590 * modifier && ballY < paddleYR + 110 * modifier && ballY > paddleYR - 10 * modifier) {
-            ballVX = -ballVX - 0.2; 
-            ballVY += (ballY - paddleYR - 45) / 20;
+            ballVX = -ballVX - 0.05; 
+            ballVY += (ballY - paddleYR - 45 * modifier) / 20;
         }
     } else {
         if (ballX >= wallSize - 10) {
@@ -220,8 +245,8 @@ function bouncing(){
 
     if(livesU > 0){
         if (ballY <= 40 * modifier && ballY >= 20 * modifier && ballX < paddleXU + 110 * modifier && ballX > paddleXU - 10 * modifier) {
-            ballVY = -ballVY + 0.2; 
-            ballVX += (ballX - paddleXU - 45) / 20;
+            ballVY = -ballVY + 0.05; 
+            ballVX += (ballX - paddleXU - 45 * modifier) / 20;
         }
     } else {
         if (ballY <= 0) {
@@ -231,8 +256,8 @@ function bouncing(){
     }
     if(livesD > 0){
         if (ballY <= 610 * modifier && ballY >= 590 * modifier && ballX < paddleXD + 110 * modifier && ballX > paddleXD - 10 * modifier) {
-            ballVY = -ballVY - 0.2; 
-            ballVX += (ballX - paddleXD - 45) / 20;
+            ballVY = -ballVY - 0.05; 
+            ballVX += (ballX - paddleXD - 45 * modifier) / 20;
         }
     } else {
         if (ballY >= wallSize - 10) {
@@ -244,31 +269,54 @@ function bouncing(){
 
 function buildPaddles(){
     if(livesL > 0){
+        context.beginPath();
+        context.fillStyle = "#6166ff"; // blue
         context.fillRect(20 * modifier, paddleYL, 20 * modifier, 100 * modifier);
+        context.closePath();
     }
     if(livesR > 0){
+        context.beginPath();
+        context.fillStyle = "#3de364"; // green
         context.fillRect(600 * modifier, paddleYR, 20 * modifier, 100 * modifier);
     }
     if(livesU > 0){
+        context.beginPath();
+        context.fillStyle = "#ff6161"; // red
         context.fillRect(paddleXU, 20 * modifier, 100 * modifier, 20 * modifier);
+        context.closePath();
     }
     if(livesD > 0){
+        context.beginPath();
+        context.fillStyle = "#fffc61"; // yellow
         context.fillRect(paddleXD, 600 * modifier, 100 * modifier, 20 * modifier);
+        context.closePath();
     }
 }
 
 function displayLives(){
     if(livesL > 0){
-        context.fillText(livesL, 250 * modifier, 350 * modifier);
+        document.getElementById("left").textContent = livesL;
+        // context.fillText(livesL, 250 * modifier, 350 * modifier);
+    } else{
+        document.getElementById("left").textContent = "";
     }
     if(livesR > 0){
-        context.fillText(livesR, 360 * modifier, 350 * modifier);
+        document.getElementById("right").textContent = livesR;
+        // context.fillText(livesR, 360 * modifier, 350 * modifier);
+    } else{
+        document.getElementById("right").textContent = "";
     }
     if(livesU > 0){
-        context.fillText(livesU, 284 * modifier, 100 * modifier);
+        document.getElementById("up").textContent = livesU;
+        // context.fillText(livesU, 284 * modifier, 100 * modifier);
+    } else{
+        document.getElementById("up").textContent = "";
     }
     if(livesD > 0){
-        context.fillText(livesD, 284 * modifier, 500 * modifier);
+        document.getElementById("down").textContent = livesD;
+        // context.fillText(livesD, 284 * modifier, 500 * modifier);
+    } else{
+        document.getElementById("down").textContent = "";
     }
     
 }
@@ -366,10 +414,8 @@ function winCondition(){
     
 }    
     
-function delay(n){
-    return new Promise(function(resolve){
-        setTimeout(resolve,n*1000);
-    });
+function getRandomArbitrary(min, max) {
+    return Math.random() * (max - min) + min;
 }    
    
 function autoplay(){
