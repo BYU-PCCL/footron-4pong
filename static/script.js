@@ -148,12 +148,34 @@ setInterval(function () {
         // context.fillText(Math.floor(ballX) + "," + Math.floor(ballY), 340 * modifier, 550 * modifier);
         
         // speed
-        // context.fillText(Math.floor(ballVX) + "," + Math.floor(ballVY), 400 * modifier, 610 * modifier);
+        context.fillText(Math.floor(ballVX) + "," + Math.floor(ballVY), 400 * modifier, 610 * modifier);
     
     
 }, 15) // Speed 15
 
 // controls
+
+// foomsg
+
+messaging = foomsg.messaging()
+
+moveL = moveR = moveU = moveD = "stop";
+
+function message_handler(left, right, up, down){
+    moveL = left;
+    moveR = right;
+    moveU = up;
+    moveD = down;
+
+}
+
+function movement(){
+    paddleVL = moveL == "up" ? moveSpd : moveL == "down" ? -moveSpd : moveL == "stop" ? 0 : paddleVL; 
+    paddleVR = moveR == "up" ? moveSpd : moveR == "down" ? -moveSpd : moveR == "stop" ? 0 : paddleVR;
+    paddleVU = moveU == "right" ? moveSpd : moveU == "left" ? -moveSpd : moveU == "stop" ? 0 : paddleVR;
+    paddleVD = moveD == "right" ? moveSpd : moveD == "left" ? -moveSpd : moveD == "stop" ? 0 : paddleVD;
+}
+/*
 q = '81';
 a = '65';
 up = '38';
@@ -166,6 +188,8 @@ s = '83';
 d = '68';
 space = '32';
 
+
+
 lUp = w;
 lDown = s;
 rUp = up;
@@ -176,22 +200,26 @@ dLeft = lft;
 dRight = rght;
 
 
-document.onkeydown = function (event) { 
-    keycode = (event || window.event).keyCode; 
-    paused = paused ? 0 : keycode == '27' ? 1 : 0; 
-    // paddleVL = keycode == lDown ? moveSpd : keycode == lUp ? -moveSpd : paddleVL; 
-    // paddleVR = keycode == rDown ? moveSpd : keycode == rUp ? -moveSpd : paddleVR; 
-    // paddleVU = keycode == uRight ? moveSpd : keycode == uLeft ? -moveSpd : paddleVU; 
-    // paddleVD = keycode == dRight ? moveSpd : keycode == dLeft ? -moveSpd : paddleVD; 
+if (!auto){
+    document.onkeydown = function (event) { 
+        keycode = (event || window.event).keyCode; 
+        paused = paused ? 0 : keycode == '27' ? 1 : 0; 
+        paddleVL = keycode == lDown ? moveSpd : keycode == lUp ? -moveSpd : paddleVL; 
+        paddleVR = keycode == rDown ? moveSpd : keycode == rUp ? -moveSpd : paddleVR; 
+        paddleVU = keycode == uRight ? moveSpd : keycode == uLeft ? -moveSpd : paddleVU; 
+        paddleVD = keycode == dRight ? moveSpd : keycode == dLeft ? -moveSpd : paddleVD; 
+    }
+    document.onkeyup = function (event) { 
+        keycode = (event || window.event).keyCode; 
+        paddleVL = keycode == lDown || keycode == lUp ? 0 : paddleVL; 
+        paddleVR = keycode == rUp || keycode == rDown ? 0 : paddleVR; 
+        paddleVU = keycode == uRight || keycode == uLeft ? 0 : paddleVU; 
+        paddleVD = keycode == dLeft || keycode == dRight ? 0 : paddleVD;
+        restart = keycode == space;
+    }
 }
-document.onkeyup = function (event) { 
-    keycode = (event || window.event).keyCode; 
-    // paddleVL = keycode == lDown || keycode == lUp ? 0 : paddleVL; 
-    // paddleVR = keycode == rUp || keycode == rDown ? 0 : paddleVR; 
-    // paddleVU = keycode == uRight || keycode == uLeft ? 0 : paddleVU; 
-    // paddleVD = keycode == dLeft || keycode == dRight ? 0 : paddleVD;
-    restart = keycode == space;
-}
+
+*/
 
 /* Variable index:
 livesL -> left player score
