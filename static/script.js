@@ -10,7 +10,7 @@
 
 /**
  * TODO
- *  - implement pauses before restart
+ *  - confirm start from all players?
  */
 
 /**
@@ -19,9 +19,28 @@
  *  - Border/lives placement outside
  *  - Fix bouncing coundaries
  *  - Equalize X/Y Movement
- *  - 
+ *  - implement pauses before restart
  *
  */
+
+messaging = new FootronMessaging.Messaging();
+messaging.mount();
+
+moveL = moveR = moveU = moveD = "stop";
+
+// function messageHandler(left, right, up, down){
+function messageHandler(left){
+    moveL = left;
+
+}
+// probably need 4 messageListeners
+// or 1 message that is fed in from 4 connections
+
+this.messageHandler = this.messageHandler.bind(this);
+
+messaging.addMessageListener(this.messageHandler);
+
+
 windowSize = window.innerHeight * .75;
 wallSize = windowSize;
 modifier = wallSize / 640;
@@ -30,7 +49,7 @@ document.getElementById('c').width = wallSize;
 document.getElementById('c').height = wallSize;
 context.fillStyle = "#FFF";
 context.font = "60px monospace";
-paused = start = 1;
+paused = true;
 livesL = livesR = livesU = livesD = 3;
 resetPositions();
 ballX = getRandomArbitrary(wallSize * .2, wallSize * .8);
@@ -53,22 +72,20 @@ moveSpd = 10 * modifier;
 aliveL = aliveR = aliveU = aliveD = true;
 winner = "";
 auto = false;
+
+
 setInterval(function () {
+    console.log(moveL);
+    buildLines();
+    buildPaddles();
     if(winner == ""){
-        if (paused && !start && winner == "" && !auto) return; 
-        start = 0;
+        controls();
+        if (paused && !auto) return; 
         context.clearRect(0, 0, wallSize, wallSize);
         
         // dashed lines
-        context.beginPath();
-        context.fillStyle = "white";
-        for (lineCounter = 5; lineCounter < wallSize; lineCounter += 20)
-            context.fillRect(wallSize/2, lineCounter, 4, 10);
+        buildLines();
 
-        for (lineCounter = 5; lineCounter < wallSize; lineCounter += 20)
-            context.fillRect(lineCounter , wallSize/2, 10, 4);
-            
-        context.closePath();
         // Paddle movement logic
         paddleYL += paddleVL; 
         paddleYR += paddleVR;
@@ -95,7 +112,8 @@ setInterval(function () {
 
         // autoplay
         // autoplay();
-        crazymode();
+        // crazymode();
+        
         
         // Scoring
         lifeTracking();
@@ -105,19 +123,18 @@ setInterval(function () {
 
         // Display Lives
         displayLives();
+
         // Build paddles + ball
         buildPaddles();
-
         winCondition();
 
         
         
     } else {
-        if(!restart){
+        if(!restart()){
             context.beginPath();
             context.fillStyle = "white";
             context.fillText("Winner is: " + winner, 100 * modifier,200 * modifier);
-            delay(6)
             context.fillText("Play Again?", 170 * modifier,300 * modifier);
             context.closePath();
 
@@ -157,23 +174,27 @@ setInterval(function () {
 
 // foomsg
 
-messaging = foomsg.messaging()
-
-moveL = moveR = moveU = moveD = "stop";
-
-function message_handler(left, right, up, down){
-    moveL = left;
-    moveR = right;
-    moveU = up;
-    moveD = down;
-
-}
-
-function movement(){
-    paddleVL = moveL == "up" ? moveSpd : moveL == "down" ? -moveSpd : moveL == "stop" ? 0 : paddleVL; 
-    paddleVR = moveR == "up" ? moveSpd : moveR == "down" ? -moveSpd : moveR == "stop" ? 0 : paddleVR;
+function controls(){
+    paddleVL = moveL == "up" ? -moveSpd : moveL == "down" ? moveSpd : moveL == "stop" ? 0 : paddleVL; 
+    paddleVR = moveR == "up" ? -moveSpd : moveR == "down" ? moveSpd : moveR == "stop" ? 0 : paddleVR;
     paddleVU = moveU == "right" ? moveSpd : moveU == "left" ? -moveSpd : moveU == "stop" ? 0 : paddleVR;
     paddleVD = moveD == "right" ? moveSpd : moveD == "left" ? -moveSpd : moveD == "stop" ? 0 : paddleVD;
+    
+    // if(
+    //     moveL != "stop" ||
+    //     moveR != "stop" ||
+    //     moveU != "stop" ||
+    //     moveD != "stop"
+    //     ){
+    //         console.log("not paused");
+    //         paused = false;
+    //     } else {
+    //         console.log("uhh");
+    //     }
+    // }
+    if(moveL != "stop"){
+        paused = false;
+    }
 }
 /*
 q = '81';
@@ -187,9 +208,6 @@ e = '69';
 s = '83';
 d = '68';
 space = '32';
-
-
-
 lUp = w;
 lDown = s;
 rUp = up;
@@ -198,8 +216,6 @@ uLeft = a;
 uRight = d;
 dLeft = lft;
 dRight = rght;
-
-
 if (!auto){
     document.onkeydown = function (event) { 
         keycode = (event || window.event).keyCode; 
@@ -218,7 +234,6 @@ if (!auto){
         restart = keycode == space;
     }
 }
-
 */
 
 /* Variable index:
@@ -232,7 +247,6 @@ paddleYL -> left paddle ballY
 paddleYR -> right paddle ballY
 paddleVL -> left paddle ballY velocity
 paddleVR -> right paddle ballY velocity
-start -> is start of game
 ballVX -> ball ballX velocity
 ballVY -> ball ballY velocity
 paused -> game is waiting (paused)
@@ -240,10 +254,23 @@ ballX -> ball ballX
 ballY -> ball ballY
 */
 
+function buildLines(){
+    context.beginPath();
+    context.fillStyle = "white";
+    for (lineCounter = 5; lineCounter < wallSize; lineCounter += 20)
+        context.fillRect(wallSize/2, lineCounter, 4, 10);
+
+    for (lineCounter = 5; lineCounter < wallSize; lineCounter += 20)
+        context.fillRect(lineCounter , wallSize/2, 10, 4);
+        
+    context.closePath();
+}
+
 function resetPositions(){
-    // paused = 1;
+    paused = true;
     paddleYL = paddleYR = paddleXU = paddleXD= 270 * modifier;
     paddleVL = paddleVR = paddleVU = paddleVD = 0;
+    // restart = false;
 }
 
 function bouncing(){
@@ -445,7 +472,7 @@ function winCondition(){
 function getRandomArbitrary(min, max) {
     return Math.random() * (max - min) + min;
 }    
-   
+
 function autoplay(){
     auto = true;
     range = 25
@@ -502,4 +529,12 @@ function crazymode(){
     auto = true;
     paddleYL = paddleYR = ballY - (50 * modifier);
     paddleXU = paddleXD = ballX - 50 * modifier;
+}
+
+function restart(){
+    if (moveL != "stop" || moveR != "stop" || moveU != "stop" || moveD != "stop"){
+        return true;
+    } else {
+        return false;
+    }
 }
