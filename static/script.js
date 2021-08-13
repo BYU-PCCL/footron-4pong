@@ -11,34 +11,122 @@
 /**
  * TODO
  *  - confirm start from all players?
+ *  - async so you can pause for a couple seconds?
+ *  - make code more efficient
  */
 
 /**
  * Done
  *  - Colors
- *  - Border/lives placement outside
- *  - Fix bouncing coundaries
- *  - Equalize X/Y Movement
- *  - implement pauses before restart
  *
  */
 
 messaging = new FootronMessaging.Messaging();
 messaging.mount();
 
+messaging.setLock(4);
+
+// class Player {
+//     constructor(name){
+//         this.alive = true;
+//         this.startState = false;
+//         this.startButton = false;
+//         this.lives = 3;
+//         this.name = name;
+//         if(name == "left" || name == "right"){
+//             this.move1 = "up";
+//             this.move2 = "down";
+//         } else if(name == "up" || name == "down"){
+//             this.move1 = "up";
+//             this.move2 = "down";
+//         }
+//     }
+// }
+
 moveL = moveR = moveU = moveD = "stop";
+activeList = [];
+lStart = rStart = uStart = dStart = false;
+lStartButton = rStartButton = uStartButton = dStartButton = false;
 
 // function messageHandler(left, right, up, down){
-function messageHandler(left){
-    moveL = left;
+// each json message should be in this format:
+// player: (left/right/up/down), movement: (left/right/up/down)
+function messageHandler(jmsg){
+    if(jmsg.player == "Left"){
+        moveL = jmsg.movement == 0 ? "up" : jmsg.movement == 1 ? "stop" : jmsg.movement == 2 ? "down" : moveL;
+        lStartButton = jmsg.movement == 3 ? true : false;
+    } else if(jmsg.player == "Right"){
+        moveR = jmsg.movement == 0 ? "up" : jmsg.movement == 1 ? "stop" : jmsg.movement == 2 ? "down" : moveR;
+        rStartButton = jmsg.movement == 3 ? true : false;
+    } else if(jmsg.player == "Up"){
+        moveU = jmsg.movement == 0 ? "left" : jmsg.movement == 1 ? "stop" : jmsg.movement == 2 ? "right" : moveU;
+        uStartButton = jmsg.movement == 3 ? true : false;
+    } else if(jmsg.player == "Down"){
+        moveD = jmsg.movement == 0 ? "left" : jmsg.movement == 1 ? "stop" : jmsg.movement == 2 ? "right" : moveD;
+        dStartButton = jmsg.movement == 3 ? true : false;
+    }
 
+}
+const playerMap = new Map();
+playerMap.set("left", null); // left
+playerMap.set("right", null); // right
+playerMap.set("up", null); // up
+playerMap.set("down", null); // down
+async function connectionHandler(connection){
+    console.log(connection.getId())
+    if(playerMap.get("left") == null){
+        await connection.accept();
+        playerMap.set("left", connection);
+        connection.sendMessage({player: "Left"});
+        activeList.push("left");
+        console.log("left connected");
+
+    } else if(playerMap.get("right") == null){
+        await connection.accept();
+        playerMap.set("right", connection);
+        connection.sendMessage({player: "Right"});
+        activeList.push("right");
+        console.log("right connected");
+
+    } else if(playerMap.get("up") == null){
+        await connection.accept();
+        playerMap.set("up", connection);
+        connection.sendMessage({player: "Up"});
+        activeList.push("up");
+        console.log("up connected");
+
+    } else if(playerMap.get("down") == null){
+        await connection.accept();
+        playerMap.set("down", connection);
+        connection.sendMessage({player: "Down"});
+        activeList.push("down");
+        console.log("down connected");
+        
+    } else {
+        connection.deny();
+        console.log("Too many connections???")
+    }
+}
+
+function checkStart(val){
+    if(val == "left"){
+        return lStart;
+    } else if(val == "right"){
+        return rStart;
+    } else if(val == "up"){
+        return uStart;
+    } else if(val == "down"){
+        return dStart;
+    }
 }
 // probably need 4 messageListeners
 // or 1 message that is fed in from 4 connections
 
-this.messageHandler = this.messageHandler.bind(this);
+// this.messageHandler = this.messageHandler.bind(this);
 
-messaging.addMessageListener(this.messageHandler);
+messaging.addMessageListener(messageHandler);
+
+messaging.addConnectionListener(connectionHandler);
 
 
 windowSize = window.innerHeight * .75;
@@ -78,9 +166,10 @@ setInterval(function () {
     console.log(moveL);
     buildLines();
     buildPaddles();
+    displayLives();
+    controls();
     if(winner == ""){
-        controls();
-        if (paused && !auto) return; 
+        if (!activeList.every(checkStart) && paused && !auto && activeList.length > 0) return; 
         context.clearRect(0, 0, wallSize, wallSize);
         
         // dashed lines
@@ -192,49 +281,27 @@ function controls(){
     //         console.log("uhh");
     //     }
     // }
-    if(moveL != "stop"){
-        paused = false;
+    if(lStartButton == true){
+        lStart = true;
+        lStartButton == false;
+        console.log("START");
     }
+    if(rStartButton == true){
+        rStart = true;
+        rStartButton == false;
+    }
+    if(uStartButton == true){
+        uStart = true;
+        uStartButton == false;
+    }
+    if(dStartButton == true){
+        dStart = true;
+        dStartButton == false;
+    }
+    
+
+
 }
-/*
-q = '81';
-a = '65';
-up = '38';
-dwn = '40';
-lft = '37'
-rght = '39'
-w = '87';
-e = '69';
-s = '83';
-d = '68';
-space = '32';
-lUp = w;
-lDown = s;
-rUp = up;
-rDown = dwn;
-uLeft = a;
-uRight = d;
-dLeft = lft;
-dRight = rght;
-if (!auto){
-    document.onkeydown = function (event) { 
-        keycode = (event || window.event).keyCode; 
-        paused = paused ? 0 : keycode == '27' ? 1 : 0; 
-        paddleVL = keycode == lDown ? moveSpd : keycode == lUp ? -moveSpd : paddleVL; 
-        paddleVR = keycode == rDown ? moveSpd : keycode == rUp ? -moveSpd : paddleVR; 
-        paddleVU = keycode == uRight ? moveSpd : keycode == uLeft ? -moveSpd : paddleVU; 
-        paddleVD = keycode == dRight ? moveSpd : keycode == dLeft ? -moveSpd : paddleVD; 
-    }
-    document.onkeyup = function (event) { 
-        keycode = (event || window.event).keyCode; 
-        paddleVL = keycode == lDown || keycode == lUp ? 0 : paddleVL; 
-        paddleVR = keycode == rUp || keycode == rDown ? 0 : paddleVR; 
-        paddleVU = keycode == uRight || keycode == uLeft ? 0 : paddleVU; 
-        paddleVD = keycode == dLeft || keycode == dRight ? 0 : paddleVD;
-        restart = keycode == space;
-    }
-}
-*/
 
 /* Variable index:
 livesL -> left player score
@@ -274,7 +341,7 @@ function resetPositions(){
 }
 
 function bouncing(){
-    if(livesL > 0){
+    if(livesL > 0 && playerMap.get("left") != null){
         if (ballX <= 40 * modifier && ballX >= 20 * modifier && ballY < paddleYL + 110 * modifier && ballY > paddleYL - 10 * modifier) {
             ballVX = -ballVX + 0.05; 
             ballVY += (ballY - paddleYL - 45 * modifier) / 20;
@@ -286,7 +353,7 @@ function bouncing(){
         }
     }
 
-    if(livesR > 0){
+    if(livesR > 0 && playerMap.get("right") != null){
         if (ballX <= 610 * modifier && ballX >= 590 * modifier && ballY < paddleYR + 110 * modifier && ballY > paddleYR - 10 * modifier) {
             ballVX = -ballVX - 0.05; 
             ballVY += (ballY - paddleYR - 45 * modifier) / 20;
@@ -298,7 +365,7 @@ function bouncing(){
         }
     }
 
-    if(livesU > 0){
+    if(livesU > 0 && playerMap.get("up") != null){
         if (ballY <= 40 * modifier && ballY >= 20 * modifier && ballX < paddleXU + 110 * modifier && ballX > paddleXU - 10 * modifier) {
             ballVY = -ballVY + 0.05; 
             ballVX += (ballX - paddleXU - 45 * modifier) / 20;
@@ -309,7 +376,7 @@ function bouncing(){
             ballVY = -ballVY;
         }
     }
-    if(livesD > 0){
+    if(livesD > 0 && playerMap.get("down") != null){
         if (ballY <= 610 * modifier && ballY >= 590 * modifier && ballX < paddleXD + 110 * modifier && ballX > paddleXD - 10 * modifier) {
             ballVY = -ballVY - 0.05; 
             ballVX += (ballX - paddleXD - 45 * modifier) / 20;
@@ -323,24 +390,24 @@ function bouncing(){
 }
 
 function buildPaddles(){
-    if(livesL > 0){
+    if(livesL > 0 && playerMap.get("left") != null){
         context.beginPath();
         context.fillStyle = "#6166ff"; // blue
         context.fillRect(20 * modifier, paddleYL, 20 * modifier, 100 * modifier);
         context.closePath();
     }
-    if(livesR > 0){
+    if(livesR > 0 && playerMap.get("right") != null){
         context.beginPath();
         context.fillStyle = "#3de364"; // green
         context.fillRect(600 * modifier, paddleYR, 20 * modifier, 100 * modifier);
     }
-    if(livesU > 0){
+    if(livesU > 0 && playerMap.get("up") != null){
         context.beginPath();
         context.fillStyle = "#ff6161"; // red
         context.fillRect(paddleXU, 20 * modifier, 100 * modifier, 20 * modifier);
         context.closePath();
     }
-    if(livesD > 0){
+    if(livesD > 0 && playerMap.get("down") != null){
         context.beginPath();
         context.fillStyle = "#fffc61"; // yellow
         context.fillRect(paddleXD, 600 * modifier, 100 * modifier, 20 * modifier);
@@ -349,38 +416,36 @@ function buildPaddles(){
 }
 
 function displayLives(){
-    if(livesL > 0){
+    if(livesL > 0 && playerMap.get("left") != null){
         document.getElementById("left").textContent = livesL;
         // context.fillText(livesL, 250 * modifier, 350 * modifier);
-    } else{
-        document.getElementById("left").textContent = "";
     }
-    if(livesR > 0){
+    if(livesR > 0 && playerMap.get("right") != null){
         document.getElementById("right").textContent = livesR;
         // context.fillText(livesR, 360 * modifier, 350 * modifier);
-    } else{
-        document.getElementById("right").textContent = "";
+    // } else{
+    //     document.getElementById("right").textContent = "0";
     }
-    if(livesU > 0){
+    if(livesU > 0 && playerMap.get("up") != null){
         document.getElementById("up").textContent = livesU;
         // context.fillText(livesU, 284 * modifier, 100 * modifier);
-    } else{
-        document.getElementById("up").textContent = "";
+    // } else{
+    //     document.getElementById("up").textContent = "0";
     }
-    if(livesD > 0){
+    if(livesD > 0 && playerMap.get("down") != null){
         document.getElementById("down").textContent = livesD;
         // context.fillText(livesD, 284 * modifier, 500 * modifier);
-    } else{
-        document.getElementById("down").textContent = "";
+    // } else{
+    //     document.getElementById("down").textContent = "0";
     }
     
 }
 
 function lifeTracking(){
-    if(livesL > 0){
+    if(livesL > 0 && playerMap.get("left") != null){
         if (ballX < -10 * modifier) {
             livesL--; 
-            if(livesL > 0){
+            if(livesL > 0 && playerMap.get("left") != null){
                 ballX = 90; 
                 ballY = wallSize/2;
                 ballVX = 5;
@@ -391,10 +456,10 @@ function lifeTracking(){
         }
     }
 
-    if(livesR > 0){
+    if(livesR > 0 && playerMap.get("right") != null){
         if (ballX > 630 * modifier) {
             livesR--; 
-            if(livesR > 0){
+            if(livesR > 0 && playerMap.get("right") != null){
                 ballX = 540; 
                 ballY = wallSize/2; 
                 ballVX = -5; 
@@ -404,10 +469,10 @@ function lifeTracking(){
         }
     } 
 
-    if(livesU > 0){
+    if(livesU > 0 && playerMap.get("up") != null){
         if (ballY < -10 * modifier) {
             livesU--; 
-            if(livesU > 0){
+            if(livesU > 0 && playerMap.get("up") != null){
                 ballX = wallSize/2; 
                 ballY = 90; 
                 ballVY = 5; 
@@ -417,11 +482,11 @@ function lifeTracking(){
         }
     } 
 
-    if(livesD > 0){
+    if(livesD > 0 && playerMap.get("down") != null){
         if (ballY > 630 * modifier) {
             livesD--; 
         
-            if(livesD > 0){
+            if(livesD > 0 && playerMap.get("down") != null){
                 ballX = wallSize/2; 
                 ballY = 540; 
                 ballVY = -5; 
@@ -433,38 +498,48 @@ function lifeTracking(){
 }
 
 function winCondition(){
-    oneAlive = false;
-    moreAlive = false;
-    if (livesL > 0){
-        winner = "L";
-    } 
-    if (livesR > 0){
-        if(winner != ""){
-            moreAlive = true;
-        } else {
-            winner = "R";
+    if (activeList.length > 1){
+        oneAlive = false;
+        moreAlive = false;
+        if (livesL > 0){
+            winner = "L";
+        } 
+        if (livesR > 0){
+            if(winner != ""){
+                moreAlive = true;
+            } else {
+                winner = "R";
+            }
+            
+        } 
+        if (livesU > 0){
+            if(winner != ""){
+                moreAlive = true;
+            } else {
+                winner = "U";
+            }
+            
+        } 
+        if (livesD > 0){
+            if(winner != ""){
+                moreAlive = true;
+            } else {
+                winner = "D";
+            }
+            
         }
-        
-    } 
-    if (livesU > 0){
-        if(winner != ""){
-            moreAlive = true;
+        if(moreAlive){
+            winner = "";
         } else {
-            winner = "U";
+            lStart = rStart = uStart = dStart = false;
         }
-        
-    } 
-    if (livesD > 0){
-        if(winner != ""){
-            moreAlive = true;
-        } else {
-            winner = "D";
+    } else if (activeList.length == 1){
+        if (livesL == 0){
+            winner = "L"
+            lStart = false;
         }
-        
     }
-    if(moreAlive){
-        winner = "";
-    }
+    
 
     
 }    
@@ -532,7 +607,7 @@ function crazymode(){
 }
 
 function restart(){
-    if (moveL != "stop" || moveR != "stop" || moveU != "stop" || moveD != "stop"){
+    if (activeList.every(checkStart)){
         return true;
     } else {
         return false;
