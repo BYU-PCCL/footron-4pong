@@ -26,22 +26,23 @@ messaging.mount();
 
 messaging.setLock(4);
 
-// class Player {
-//     constructor(name){
-//         this.alive = true;
-//         this.startState = false;
-//         this.startButton = false;
-//         this.lives = 3;
-//         this.name = name;
-//         if(name == "left" || name == "right"){
-//             this.move1 = "up";
-//             this.move2 = "down";
-//         } else if(name == "up" || name == "down"){
-//             this.move1 = "up";
-//             this.move2 = "down";
-//         }
-//     }
-// }
+class Player {
+    constructor(name, connection){
+        this.alive = true;
+        this.startState = false;
+        this.startButton = false;
+        this.lives = 3;
+        this.name = name;
+        this.connection = connection;
+        if(name == "left" || name == "right"){
+            this.move1 = "up";
+            this.move2 = "down";
+        } else if(name == "up" || name == "down"){
+            this.move1 = "up";
+            this.move2 = "down";
+        }
+    }
+}
 
 moveL = moveR = moveU = moveD = "stop";
 activeList = [];
@@ -67,57 +68,58 @@ function messageHandler(jmsg){
     }
 
 }
-const playerMap = new Map();
-playerMap.set("left", null); // left
-playerMap.set("right", null); // right
-playerMap.set("up", null); // up
-playerMap.set("down", null); // down
+let availablePlayers = ["left", "right", "up", "down"]
+const playerMap = new Map();    
+// playerMap.set("left", null); // left
+// playerMap.set("right", null); // right
+// playerMap.set("up", null); // up
+// playerMap.set("down", null); // down
 async function connectionHandler(connection){
     console.log(connection.getId())
-    if(playerMap.get("left") == null){
+    if(availablePlayers.length > 0){
         await connection.accept();
-        playerMap.set("left", connection);
-        connection.sendMessage({player: "Left"});
-        activeList.push("left");
-        console.log("left connected");
+        player.set(availablePlayers[0], new Player(availablePlayers[0]));
+        console.log(`connected player: ${availablePlayers[0]}`);
+        activeList.push(availablePlayers.shift())
+    }
+    
+    // if(playerMap.get("left") == null){
+    //     await connection.accept();
+    //     playerMap.set("left", new Player("left", connection));
+    //     connection.sendMessage({player: "Left"});
+    //     activeList.push("left");
+    //     console.log("left connected");
 
-    } else if(playerMap.get("right") == null){
-        await connection.accept();
-        playerMap.set("right", connection);
-        connection.sendMessage({player: "Right"});
-        activeList.push("right");
-        console.log("right connected");
+    // } else if(playerMap.get("right") == null){
+    //     await connection.accept();
+    //     playerMap.set("right", connection);
+    //     connection.sendMessage({player: "Right"});
+    //     activeList.push("right");
+    //     console.log("right connected");
 
-    } else if(playerMap.get("up") == null){
-        await connection.accept();
-        playerMap.set("up", connection);
-        connection.sendMessage({player: "Up"});
-        activeList.push("up");
-        console.log("up connected");
+    // } else if(playerMap.get("up") == null){
+    //     await connection.accept();
+    //     playerMap.set("up", connection);
+    //     connection.sendMessage({player: "Up"});
+    //     activeList.push("up");
+    //     console.log("up connected");
 
-    } else if(playerMap.get("down") == null){
-        await connection.accept();
-        playerMap.set("down", connection);
-        connection.sendMessage({player: "Down"});
-        activeList.push("down");
-        console.log("down connected");
+    // } else if(playerMap.get("down") == null){
+    //     await connection.accept();
+    //     playerMap.set("down", connection);
+    //     connection.sendMessage({player: "Down"});
+    //     activeList.push("down");
+    //     console.log("down connected");
         
-    } else {
+    // }
+     else {
         connection.deny();
         console.log("Too many connections???")
     }
 }
 
 function checkStart(val){
-    if(val == "left"){
-        return lStart;
-    } else if(val == "right"){
-        return rStart;
-    } else if(val == "up"){
-        return uStart;
-    } else if(val == "down"){
-        return dStart;
-    }
+    return val.startState;
 }
 // probably need 4 messageListeners
 // or 1 message that is fed in from 4 connections
