@@ -28,7 +28,6 @@ messaging.setLock(4);
 
 class Player {
     constructor(name, connection){
-        this.alive = true;
         this.startState = false;
         this.startButton = false;
         this.lives = 3;
@@ -42,6 +41,24 @@ class Player {
             this.move2 = "down";
         }
     }
+
+    isAlive(){
+        return this.lives > 0;
+    }
+
+    setLives(num){
+        this.lives = num;
+    }
+
+    displayLives(){
+        if(this.isAlive()){
+            document.getElementById(this.name).textContent = this.lives;
+        }
+    }
+}
+
+function setZLives(player, num){
+    player.setLives(num);
 }
 
 moveL = moveR = moveU = moveD = "stop";
@@ -70,10 +87,6 @@ function messageHandler(jmsg){
 }
 let availablePlayers = ["left", "right", "up", "down"]
 const playerMap = new Map();    
-// playerMap.set("left", null); // left
-// playerMap.set("right", null); // right
-// playerMap.set("up", null); // up
-// playerMap.set("down", null); // down
 async function connectionHandler(connection){
     console.log(connection.getId())
     if(availablePlayers.length > 0){
@@ -81,45 +94,16 @@ async function connectionHandler(connection){
         player.set(availablePlayers[0], new Player(availablePlayers[0]));
         console.log(`connected player: ${availablePlayers[0]}`);
         activeList.push(availablePlayers.shift())
+        resetPositions();
     }
-    
-    // if(playerMap.get("left") == null){
-    //     await connection.accept();
-    //     playerMap.set("left", new Player("left", connection));
-    //     connection.sendMessage({player: "Left"});
-    //     activeList.push("left");
-    //     console.log("left connected");
-
-    // } else if(playerMap.get("right") == null){
-    //     await connection.accept();
-    //     playerMap.set("right", connection);
-    //     connection.sendMessage({player: "Right"});
-    //     activeList.push("right");
-    //     console.log("right connected");
-
-    // } else if(playerMap.get("up") == null){
-    //     await connection.accept();
-    //     playerMap.set("up", connection);
-    //     connection.sendMessage({player: "Up"});
-    //     activeList.push("up");
-    //     console.log("up connected");
-
-    // } else if(playerMap.get("down") == null){
-    //     await connection.accept();
-    //     playerMap.set("down", connection);
-    //     connection.sendMessage({player: "Down"});
-    //     activeList.push("down");
-    //     console.log("down connected");
-        
-    // }
      else {
         connection.deny();
         console.log("Too many connections???")
     }
 }
 
-function checkStart(val){
-    return val.startState;
+function checkStart(player){
+    return player.startState;
 }
 // probably need 4 messageListeners
 // or 1 message that is fed in from 4 connections
@@ -159,7 +143,6 @@ if (ballY > wallSize/2){
 
 
 moveSpd = 10 * modifier;
-aliveL = aliveR = aliveU = aliveD = true;
 winner = "";
 auto = false;
 
@@ -230,13 +213,17 @@ setInterval(function () {
             context.closePath();
 
             if(auto){
-                livesL = livesR = livesU = livesD = 3;
+                activeList.forEach(player => {player.setLives(3);
+                });
+                // livesL = livesR = livesU = livesD = 3;
             resetPositions();
             winner = "";
             buildPaddles();
             }
         } else {
-            livesL = livesR = livesU = livesD = 3;
+            activeList.forEach(player => {player.setLives(3);
+            });
+            // livesL = livesR = livesU = livesD = 3;
             resetPositions();
             winner = "";
             buildPaddles();
@@ -249,7 +236,7 @@ setInterval(function () {
         if(winner != ""){
             context.beginPath();
             context.fillStyle = "white";
-            context.fillText("Winner is: " + winner, 100 * modifier,200 * modifier);
+            context.fillText("Winner is: " + winner, 100 * modifier, 200 * modifier);
             context.closePath();
         }
         // location
@@ -271,57 +258,16 @@ function controls(){
     paddleVU = moveU == "right" ? moveSpd : moveU == "left" ? -moveSpd : moveU == "stop" ? 0 : paddleVR;
     paddleVD = moveD == "right" ? moveSpd : moveD == "left" ? -moveSpd : moveD == "stop" ? 0 : paddleVD;
     
-    // if(
-    //     moveL != "stop" ||
-    //     moveR != "stop" ||
-    //     moveU != "stop" ||
-    //     moveD != "stop"
-    //     ){
-    //         console.log("not paused");
-    //         paused = false;
-    //     } else {
-    //         console.log("uhh");
-    //     }
-    // }
-    if(lStartButton == true){
-        lStart = true;
-        lStartButton == false;
-        console.log("START");
-    }
-    if(rStartButton == true){
-        rStart = true;
-        rStartButton == false;
-    }
-    if(uStartButton == true){
-        uStart = true;
-        uStartButton == false;
-    }
-    if(dStartButton == true){
-        dStart = true;
-        dStartButton == false;
-    }
+    activeList.forEach(player => {
+        if(player.startButton){
+            player.startState = true;
+            player.startButton = false;
+            console.log(`Ready: " ${player.name}`);
+        }
+
+    });
     
-
-
 }
-
-/* Variable index:
-livesL -> left player score
-livesR -> right player score
-context -> context
-event -> event
-lineCounter -> counter for dashed line
-keycode -> keycode
-paddleYL -> left paddle ballY
-paddleYR -> right paddle ballY
-paddleVL -> left paddle ballY velocity
-paddleVR -> right paddle ballY velocity
-ballVX -> ball ballX velocity
-ballVY -> ball ballY velocity
-paused -> game is waiting (paused)
-ballX -> ball ballX
-ballY -> ball ballY
-*/
 
 function buildLines(){
     context.beginPath();
@@ -343,52 +289,43 @@ function resetPositions(){
 }
 
 function bouncing(){
-    if(livesL > 0 && playerMap.get("left") != null){
-        if (ballX <= 40 * modifier && ballX >= 20 * modifier && ballY < paddleYL + 110 * modifier && ballY > paddleYL - 10 * modifier) {
-            ballVX = -ballVX + 0.05; 
-            ballVY += (ballY - paddleYL - 45 * modifier) / 20;
+    activeList.forEach(player => {
+        if(player.isAlive()){
+            if(player.name == "left"){
+                if (ballX <= 40 * modifier && ballX >= 20 * modifier && ballY < paddleYL + 110 * modifier && ballY > paddleYL - 10 * modifier) {
+                    ballVX = -ballVX + 0.05; 
+                    ballVY += (ballY - paddleYL - 45 * modifier) / 20;
+                } else if (ballX <= 0) {
+                    ballX = 0; 
+                    ballVX = -ballVX;
+                }
+            } else if (player.name == "right") {
+                if (ballX <= 610 * modifier && ballX >= 590 * modifier && ballY < paddleYR + 110 * modifier && ballY > paddleYR - 10 * modifier) {
+                    ballVX = -ballVX - 0.05; 
+                    ballVY += (ballY - paddleYR - 45 * modifier) / 20;
+                } else if (ballX >= wallSize - 10) {
+                    ballX = wallSize - 10; 
+                    ballVX =-ballVX;
+                }
+            } else if (player.name == "up"){
+                if (ballY <= 40 * modifier && ballY >= 20 * modifier && ballX < paddleXU + 110 * modifier && ballX > paddleXU - 10 * modifier) {
+                    ballVY = -ballVY + 0.05; 
+                    ballVX += (ballX - paddleXU - 45 * modifier) / 20;
+                } else if (ballY <= 0) {
+                    ballY = 0; 
+                    ballVY = -ballVY;
+                }
+            } else if (player.name == "down"){
+                if (ballY <= 610 * modifier && ballY >= 590 * modifier && ballX < paddleXD + 110 * modifier && ballX > paddleXD - 10 * modifier) {
+                    ballVY = -ballVY - 0.05; 
+                    ballVX += (ballX - paddleXD - 45 * modifier) / 20;
+                } else if (ballY >= wallSize - 10) {
+                    ballY = wallSize - 10; 
+                    ballVY = -ballVY;
+                }
+            }
         }
-    } else {
-        if (ballX <= 0) {
-            ballX = 0; 
-            ballVX = -ballVX;
-        }
-    }
-
-    if(livesR > 0 && playerMap.get("right") != null){
-        if (ballX <= 610 * modifier && ballX >= 590 * modifier && ballY < paddleYR + 110 * modifier && ballY > paddleYR - 10 * modifier) {
-            ballVX = -ballVX - 0.05; 
-            ballVY += (ballY - paddleYR - 45 * modifier) / 20;
-        }
-    } else {
-        if (ballX >= wallSize - 10) {
-            ballX = wallSize - 10; 
-            ballVX =-ballVX;
-        }
-    }
-
-    if(livesU > 0 && playerMap.get("up") != null){
-        if (ballY <= 40 * modifier && ballY >= 20 * modifier && ballX < paddleXU + 110 * modifier && ballX > paddleXU - 10 * modifier) {
-            ballVY = -ballVY + 0.05; 
-            ballVX += (ballX - paddleXU - 45 * modifier) / 20;
-        }
-    } else {
-        if (ballY <= 0) {
-            ballY = 0; 
-            ballVY = -ballVY;
-        }
-    }
-    if(livesD > 0 && playerMap.get("down") != null){
-        if (ballY <= 610 * modifier && ballY >= 590 * modifier && ballX < paddleXD + 110 * modifier && ballX > paddleXD - 10 * modifier) {
-            ballVY = -ballVY - 0.05; 
-            ballVX += (ballX - paddleXD - 45 * modifier) / 20;
-        }
-    } else {
-        if (ballY >= wallSize - 10) {
-            ballY = wallSize - 10; 
-            ballVY = -ballVY;
-        }
-    }
+    })
 }
 
 function buildPaddles(){
@@ -418,127 +355,89 @@ function buildPaddles(){
 }
 
 function displayLives(){
-    if(livesL > 0 && playerMap.get("left") != null){
-        document.getElementById("left").textContent = livesL;
-        // context.fillText(livesL, 250 * modifier, 350 * modifier);
-    }
-    if(livesR > 0 && playerMap.get("right") != null){
-        document.getElementById("right").textContent = livesR;
-        // context.fillText(livesR, 360 * modifier, 350 * modifier);
-    // } else{
-    //     document.getElementById("right").textContent = "0";
-    }
-    if(livesU > 0 && playerMap.get("up") != null){
-        document.getElementById("up").textContent = livesU;
-        // context.fillText(livesU, 284 * modifier, 100 * modifier);
-    // } else{
-    //     document.getElementById("up").textContent = "0";
-    }
-    if(livesD > 0 && playerMap.get("down") != null){
-        document.getElementById("down").textContent = livesD;
-        // context.fillText(livesD, 284 * modifier, 500 * modifier);
-    // } else{
-    //     document.getElementById("down").textContent = "0";
-    }
+    activeList.forEach(player => {
+        player.displayLives();
+    })
     
 }
 
 function lifeTracking(){
-    if(livesL > 0 && playerMap.get("left") != null){
-        if (ballX < -10 * modifier) {
-            livesL--; 
-            if(livesL > 0 && playerMap.get("left") != null){
-                ballX = 90; 
-                ballY = wallSize/2;
-                ballVX = 5;
-                ballVY = ballVY >= 0 ? 5 : -5;
-                resetPositions();
-            }
-            
-        }
-    }
-
-    if(livesR > 0 && playerMap.get("right") != null){
-        if (ballX > 630 * modifier) {
-            livesR--; 
-            if(livesR > 0 && playerMap.get("right") != null){
-                ballX = 540; 
-                ballY = wallSize/2; 
-                ballVX = -5; 
-                ballVY = ballVY >= 0 ? 5 : -5;
-                resetPositions();
-            }
-        }
-    } 
-
-    if(livesU > 0 && playerMap.get("up") != null){
-        if (ballY < -10 * modifier) {
-            livesU--; 
-            if(livesU > 0 && playerMap.get("up") != null){
-                ballX = wallSize/2; 
-                ballY = 90; 
-                ballVY = 5; 
-                ballVX = ballVX >= 0 ? 5 : -5;
-                resetPositions();
-            }
-        }
-    } 
-
-    if(livesD > 0 && playerMap.get("down") != null){
-        if (ballY > 630 * modifier) {
-            livesD--; 
-        
-            if(livesD > 0 && playerMap.get("down") != null){
-                ballX = wallSize/2; 
-                ballY = 540; 
-                ballVY = -5; 
-                ballVX = ballVX >= 0 ? 5 : -5;
-                resetPositions();
+    activeList.forEach(player => {
+        if(player.isAlive()){
+            if(player.name == "left"){
+                if (ballX < -10 * modifier) {
+                    player.lives--; 
+                    if(player.isAlive()){
+                        ballX = 90; 
+                        ballY = wallSize/2;
+                        ballVX = 5;
+                        ballVY = ballVY >= 0 ? 5 : -5;
+                        resetPositions();
+                    }
+                }
+            } else if (player.name == "right"){
+                if (ballX > 630 * modifier) {
+                    player.lives--; 
+                    if(player.isAlive()){
+                        ballX = 540; 
+                        ballY = wallSize/2; 
+                        ballVX = -5; 
+                        ballVY = ballVY >= 0 ? 5 : -5;
+                        resetPositions();
+                    }
+                }
+            } else if (player.name == "up"){
+                if (ballY < -10 * modifier) {
+                    player.lives--; 
+                    if(player.isAlive()){
+                        ballX = wallSize/2; 
+                        ballY = 90; 
+                        ballVY = 5; 
+                        ballVX = ballVX >= 0 ? 5 : -5;
+                        resetPositions();
+                    }
+                }
+            } else if (player.name == "down"){
+                if (ballY > 630 * modifier) {
+                    player.lives--; 
+                
+                    if(player.isAlive()){
+                        ballX = wallSize/2; 
+                        ballY = 540; 
+                        ballVY = -5; 
+                        ballVX = ballVX >= 0 ? 5 : -5;
+                        resetPositions();
+                    }
+                }
             }
         }
-    }
+    });
 }
 
 function winCondition(){
     if (activeList.length > 1){
         oneAlive = false;
         moreAlive = false;
-        if (livesL > 0){
-            winner = "L";
-        } 
-        if (livesR > 0){
-            if(winner != ""){
-                moreAlive = true;
-            } else {
-                winner = "R";
+        activeList.forEach(player => {
+            if(player.isAlive()){
+                if(winner != ""){
+                    moreAlive = true;
+                } else {
+                    winner = player.name;
+                }
             }
-            
-        } 
-        if (livesU > 0){
-            if(winner != ""){
-                moreAlive = true;
-            } else {
-                winner = "U";
-            }
-            
-        } 
-        if (livesD > 0){
-            if(winner != ""){
-                moreAlive = true;
-            } else {
-                winner = "D";
-            }
-            
-        }
+        })
         if(moreAlive){
             winner = "";
         } else {
-            lStart = rStart = uStart = dStart = false;
+            activeList.forEach(player => {
+                player.startState = false;
+            })
         }
     } else if (activeList.length == 1){
-        if (livesL == 0){
+        if (!activeList[0].isAlive()){
             winner = "L"
-            lStart = false;
+            activeList[0].startState = false;
         }
     }
     
