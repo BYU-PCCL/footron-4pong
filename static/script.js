@@ -93,12 +93,13 @@ const playerMap = new Map();
 async function connectionHandler(connection){
     console.log(connection.getId());
     if(availablePlayers.length > 0){
-        connection.addLifecycleListener((paused) => paused || connection.sendMessage({player: availablePlayers[0]}))
+        const newPlayer = availablePlayers.shift();
+        connection.addLifecycleListener((paused) => paused || connection.sendMessage({player: newPlayer}));
         await connection.accept();
-        playerMap.set(availablePlayers[0], new Player(availablePlayers[0]));
+        playerMap.set(newPlayer, new Player(newPlayer, connection));
         // connection.sendMessage({player: availablePlayers[0]});
-        console.log(`connected player: ${availablePlayers[0]}`);
-        activeList.push(playerMap.get(availablePlayers.shift()));
+        console.log(`connected player: ${newPlayer}`);
+        activeList.push(playerMap.get(newPlayer));
         resetPositions();
     }
      else {
