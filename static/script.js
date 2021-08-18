@@ -246,6 +246,7 @@ setInterval(function () {
     context.beginPath();
     context.fillStyle = "white";
     context.closePath();
+    // build ball
     context.fillRect(ballX, ballY, 10 * modifier, 10 * modifier);
         if(winner != ""){
             context.beginPath();
