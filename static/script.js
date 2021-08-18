@@ -13,6 +13,7 @@
  *  - confirm start from all players?
  *  - async so you can pause for a couple seconds?
  *  - make code more efficient
+ *  - stop connections when game has started
  */
 
 /**
@@ -46,13 +47,14 @@ class Player {
         return this.lives > 0;
     }
 
-    setLives(num){
-        this.lives = num;
-    }
-
     displayLives(){
         if(this.isAlive()){
             document.getElementById(this.name).textContent = this.lives;
+            if(this.startState && !roundStarted){
+                document.getElementById(this.name).style.color = 'green';
+            } else {
+                document.getElementById(this.name).style.color = 'white';
+            }
         }
     }
 }
@@ -70,43 +72,45 @@ lStartButton = rStartButton = uStartButton = dStartButton = false;
 // each json message should be in this format:
 // player: (left/right/up/down), movement: (left/right/up/down)
 function messageHandler(jmsg){
-    if(jmsg.player == "Left"){
+    if(jmsg.player == "left"){
         moveL = jmsg.movement == 0 ? "up" : jmsg.movement == 1 ? "stop" : jmsg.movement == 2 ? "down" : moveL;
-        lStartButton = jmsg.movement == 3 ? true : false;
-    } else if(jmsg.player == "Right"){
+        // TODO: THIS IS BAD PLS FIX
+        playerMap.get("left").startButton = jmsg.movement == 3 ? true : false; 
+    } else if(jmsg.player == "right"){
         moveR = jmsg.movement == 0 ? "up" : jmsg.movement == 1 ? "stop" : jmsg.movement == 2 ? "down" : moveR;
-        rStartButton = jmsg.movement == 3 ? true : false;
-    } else if(jmsg.player == "Up"){
+        playerMap.get("right").startButton = jmsg.movement == 3 ? true : false; 
+    } else if(jmsg.player == "up"){
         moveU = jmsg.movement == 0 ? "left" : jmsg.movement == 1 ? "stop" : jmsg.movement == 2 ? "right" : moveU;
-        uStartButton = jmsg.movement == 3 ? true : false;
-    } else if(jmsg.player == "Down"){
+        playerMap.get("up").startButton = jmsg.movement == 3 ? true : false; 
+    } else if(jmsg.player == "down"){
         moveD = jmsg.movement == 0 ? "left" : jmsg.movement == 1 ? "stop" : jmsg.movement == 2 ? "right" : moveD;
-        dStartButton = jmsg.movement == 3 ? true : false;
+        playerMap.get("down").startButton = jmsg.movement == 3 ? true : false; 
     }
 
 }
-let availablePlayers = ["left", "right", "up", "down"]
+let availablePlayers = ["left", "right", "up", "down"];
 const playerMap = new Map();    
 async function connectionHandler(connection){
-    console.log(connection.getId())
+    console.log(connection.getId());
     if(availablePlayers.length > 0){
         await connection.accept();
-        player.set(availablePlayers[0], new Player(availablePlayers[0]));
+        playerMap.set(availablePlayers[0], new Player(availablePlayers[0]));
+        connection.sendMessage({player: availablePlayers[0]});
         console.log(`connected player: ${availablePlayers[0]}`);
-        activeList.push(availablePlayers.shift())
+        activeList.push(playerMap.get(availablePlayers.shift()));
         resetPositions();
     }
      else {
         connection.deny();
-        console.log("Too many connections???")
+        console.log("Too many connections???");
     }
 }
 
 function checkStart(player){
+    // console.log(`player.startState: ${player.startState}`);
+    if(!player.isAlive()) return true;
     return player.startState;
 }
-// probably need 4 messageListeners
-// or 1 message that is fed in from 4 connections
 
 // this.messageHandler = this.messageHandler.bind(this);
 
@@ -145,16 +149,28 @@ if (ballY > wallSize/2){
 moveSpd = 10 * modifier;
 winner = "";
 auto = false;
+gameStarted = false;
+roundStarted = false;
 
 
 setInterval(function () {
-    console.log(moveL);
+    // activeList.forEach(player => {
+    //     console.log(`${player.name}: online`);
+    // })
+    // console.log(moveL);
     buildLines();
     buildPaddles();
     displayLives();
     controls();
     if(winner == ""){
-        if (!activeList.every(checkStart) && paused && !auto && activeList.length > 0) return; 
+        if (!activeList.every(checkStart) && paused && !auto){
+            roundStarted = false;
+            return;
+        } 
+        else {
+            // gameStarted = true;
+            roundStarted = true;
+        }
         context.clearRect(0, 0, wallSize, wallSize);
         
         // dashed lines
@@ -246,7 +262,7 @@ setInterval(function () {
         context.fillText(Math.floor(ballVX) + "," + Math.floor(ballVY), 400 * modifier, 610 * modifier);
     
     
-}, 15) // Speed 15
+}, 16) // Speed 15
 
 // controls
 
@@ -285,48 +301,169 @@ function resetPositions(){
     paused = true;
     paddleYL = paddleYR = paddleXU = paddleXD= 270 * modifier;
     paddleVL = paddleVR = paddleVU = paddleVD = 0;
+    activeList.forEach(player => {
+        player.startState = false;
+    })
     // restart = false;
 }
 
 function bouncing(){
-    activeList.forEach(player => {
-        if(player.isAlive()){
-            if(player.name == "left"){
-                if (ballX <= 40 * modifier && ballX >= 20 * modifier && ballY < paddleYL + 110 * modifier && ballY > paddleYL - 10 * modifier) {
-                    ballVX = -ballVX + 0.05; 
-                    ballVY += (ballY - paddleYL - 45 * modifier) / 20;
-                } else if (ballX <= 0) {
-                    ballX = 0; 
-                    ballVX = -ballVX;
-                }
-            } else if (player.name == "right") {
-                if (ballX <= 610 * modifier && ballX >= 590 * modifier && ballY < paddleYR + 110 * modifier && ballY > paddleYR - 10 * modifier) {
-                    ballVX = -ballVX - 0.05; 
-                    ballVY += (ballY - paddleYR - 45 * modifier) / 20;
-                } else if (ballX >= wallSize - 10) {
-                    ballX = wallSize - 10; 
-                    ballVX =-ballVX;
-                }
-            } else if (player.name == "up"){
-                if (ballY <= 40 * modifier && ballY >= 20 * modifier && ballX < paddleXU + 110 * modifier && ballX > paddleXU - 10 * modifier) {
-                    ballVY = -ballVY + 0.05; 
-                    ballVX += (ballX - paddleXU - 45 * modifier) / 20;
-                } else if (ballY <= 0) {
-                    ballY = 0; 
-                    ballVY = -ballVY;
-                }
-            } else if (player.name == "down"){
-                if (ballY <= 610 * modifier && ballY >= 590 * modifier && ballX < paddleXD + 110 * modifier && ballX > paddleXD - 10 * modifier) {
-                    ballVY = -ballVY - 0.05; 
-                    ballVX += (ballX - paddleXD - 45 * modifier) / 20;
-                } else if (ballY >= wallSize - 10) {
-                    ballY = wallSize - 10; 
-                    ballVY = -ballVY;
-                }
-            }
+    lBounce = rBounce = uBounce = dBounce = false;
+    if(playerMap.get("left")){
+        if(playerMap.get("left").lives > 0){
         }
-    })
+    } else {
+        lBounce = true;
+    }
+    if(playerMap.get("right")){
+        if(playerMap.get("right").lives > 0){
+        }
+    } else {
+        rBounce = true;
+    }
+    if(playerMap.get("up")){
+        if(playerMap.get("up").lives > 0){
+        }
+    } else {
+        uBounce = true;
+    }
+    if(playerMap.get("down")){
+        if(playerMap.get("down").lives > 0){
+        }
+    } else {
+        dBounce = true;
+    }
+    
+    if(lBounce){
+        if (ballX <= 0) {
+            ballX = 0; 
+            ballVX = -ballVX;
+        }
+    } else {
+        if (ballX <= 40 * modifier && ballX >= 20 * modifier && ballY < paddleYL + 110 * modifier && ballY > paddleYL - 10 * modifier) {
+            ballVX = -ballVX + 0.05; 
+            ballVY += (ballY - paddleYL - 45 * modifier) / 20;
+        }
+    }
+    
+    if(rBounce){
+        if (ballX >= wallSize - 10) {
+            ballX = wallSize - 10; 
+            ballVX =-ballVX;
+        }
+    } else {
+        if (ballX <= 610 * modifier && ballX >= 590 * modifier && ballY < paddleYR + 110 * modifier && ballY > paddleYR - 10 * modifier) {
+            ballVX = -ballVX - 0.05; 
+            ballVY += (ballY - paddleYR - 45 * modifier) / 20;
+        }
+    }
+
+    if(uBounce){
+        if (ballY <= 0) {
+            ballY = 0; 
+            ballVY = -ballVY;
+        }
+    } else {
+        if (ballY <= 40 * modifier && ballY >= 20 * modifier && ballX < paddleXU + 110 * modifier && ballX > paddleXU - 10 * modifier) {
+            ballVY = -ballVY + 0.05; 
+            ballVX += (ballX - paddleXU - 45 * modifier) / 20;
+        }
+    }
+
+    if(dBounce){
+        if (ballY >= wallSize - 10) {
+            ballY = wallSize - 10; 
+            ballVY = -ballVY;
+        }
+    } else {
+        if (ballY <= 610 * modifier && ballY >= 590 * modifier && ballX < paddleXD + 110 * modifier && ballX > paddleXD - 10 * modifier) {
+            ballVY = -ballVY - 0.05; 
+            ballVX += (ballX - paddleXD - 45 * modifier) / 20;
+        }
+    }
+    
+    
+    
 }
+
+// function bouncing(){
+//     activeList.forEach(player => {
+//         if(player.isAlive()){
+//             if(player.name == "left"){
+//                 if (ballX <= 40 * modifier && ballX >= 20 * modifier && ballY < paddleYL + 110 * modifier && ballY > paddleYL - 10 * modifier) {
+//                     ballVX = -ballVX + 0.05; 
+//                     ballVY += (ballY - paddleYL - 45 * modifier) / 20;
+//                 } else if (ballX <= 0) {
+//                     ballX = 0; 
+//                     ballVX = -ballVX;
+//                 }
+//             } else if (player.name == "right") {
+//                 if (ballX <= 610 * modifier && ballX >= 590 * modifier && ballY < paddleYR + 110 * modifier && ballY > paddleYR - 10 * modifier) {
+//                     ballVX = -ballVX - 0.05; 
+//                     ballVY += (ballY - paddleYR - 45 * modifier) / 20;
+//                 } else if (ballX >= wallSize - 10) {
+//                     ballX = wallSize - 10; 
+//                     ballVX =-ballVX;
+//                 }
+//             } else if (player.name == "up"){
+//                 if (ballY <= 40 * modifier && ballY >= 20 * modifier && ballX < paddleXU + 110 * modifier && ballX > paddleXU - 10 * modifier) {
+//                     ballVY = -ballVY + 0.05; 
+//                     ballVX += (ballX - paddleXU - 45 * modifier) / 20;
+//                 } else if (ballY <= 0) {
+//                     ballY = 0; 
+//                     ballVY = -ballVY;
+//                 }
+//             } else if (player.name == "down"){
+//                 if (ballY <= 610 * modifier && ballY >= 590 * modifier && ballX < paddleXD + 110 * modifier && ballX > paddleXD - 10 * modifier) {
+//                     ballVY = -ballVY - 0.05; 
+//                     ballVX += (ballX - paddleXD - 45 * modifier) / 20;
+//                 } else if (ballY >= wallSize - 10) {
+//                     ballY = wallSize - 10; 
+//                     ballVY = -ballVY;
+//                 }
+//             }
+//         }
+//     })
+//     if (ballX <= 0) {
+//         ballX = 0; 
+//         ballVX = -ballVX;
+//     }
+//     if (ballX >= wallSize - 10) {
+//         ballX = wallSize - 10; 
+//         ballVX =-ballVX;
+//     }
+//     if (ballY <= 0) {
+//         ballY = 0; 
+//         ballVY = -ballVY;
+//     }
+//     if (ballY >= wallSize - 10) {
+//         ballY = wallSize - 10; 
+//         ballVY = -ballVY;
+//     }
+//     // availablePlayers.forEach(playerName => {
+//     //     if(playerName == "left"){
+//     //         if (ballX <= 0) {
+//     //             ballX = 0; 
+//     //             ballVX = -ballVX;
+//     //         }
+//     //     } else if (playerName == "right") {
+//     //         if (ballX >= wallSize - 10) {
+//     //             ballX = wallSize - 10; 
+//     //             ballVX =-ballVX;
+//     //         }
+//     //     } else if (playerName == "up"){
+//     //         if (ballY <= 0) {
+//     //             ballY = 0; 
+//     //             ballVY = -ballVY;
+//     //         }
+//     //     } else if (playerName == "down"){
+//     //         if (ballY >= wallSize - 10) {
+//     //             ballY = wallSize - 10; 
+//     //             ballVY = -ballVY;
+//     //         }
+//     //     }
+//     // })
+// }
 
 function buildPaddles(){
     if(livesL > 0 && playerMap.get("left") != null){
