@@ -88,11 +88,11 @@ const ControlsComponent = (): JSX.Element => {
         [sendMessage, playerName]
     );
 
-    function lUp() {
+    function up() {
         update(0);
     }
 
-    function lDown() {
+    function down() {
         update(2);
     }
 
@@ -131,8 +131,8 @@ const ControlsComponent = (): JSX.Element => {
             <div id={"name"}>{playerName || "unknown"}</div>
             <Button type="button" id={"start"} onMouseUp={start}>Start</Button>
             <div>
-                <Button type="button" id={"left"} size={"large"} onMouseDown={lUp} onMouseUp={stop}>Up</Button>
-                <Button type="button" id={"right"} size={"large"} onMouseDown={lDown} onMouseUp={stop}>Down</Button>
+                <Button type="button" id={"left"} size={"large"} onTouchStart={up} onTouchEnd={stop} onMouseDown={up} onMouseUp={stop}>Up</Button>
+                <Button type="button" id={"right"} size={"large"}  onTouchStart={down} onTouchEnd={stop} onMouseDown={down} onMouseUp={stop}>Down</Button>
             </div>
         </div>
 
