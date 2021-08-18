@@ -59,10 +59,6 @@ class Player {
     }
 }
 
-function setZLives(player, num){
-    player.setLives(num);
-}
-
 moveL = moveR = moveU = moveD = "stop";
 activeList = [];
 lStart = rStart = uStart = dStart = false;
@@ -93,13 +89,13 @@ const playerMap = new Map();
 async function connectionHandler(connection){
     console.log(connection.getId());
     if(availablePlayers.length > 0){
-        const newPlayer = availablePlayers.shift();
-        connection.addLifecycleListener((paused) => paused || connection.sendMessage({player: newPlayer}));
+        const nextPlayer = availablePlayers.shift();
+        connection.addLifecycleListener((paused) => paused || connection.sendMessage({player: nextPlayer}));
         await connection.accept();
-        playerMap.set(newPlayer, new Player(newPlayer, connection));
+        playerMap.set(nextPlayer, new Player(nextPlayer, connection));
         // connection.sendMessage({player: availablePlayers[0]});
-        console.log(`connected player: ${newPlayer}`);
-        activeList.push(playerMap.get(newPlayer));
+        console.log(`connected player: ${nextPlayer}`);
+        activeList.push(playerMap.get(nextPlayer));
         resetPositions();
     }
      else {
@@ -231,7 +227,7 @@ setInterval(function () {
             context.closePath();
 
             if(auto){
-                activeList.forEach(player => {player.setLives(3);
+                activeList.forEach(player => {player.lives = 3;
                 });
                 // livesL = livesR = livesU = livesD = 3;
             resetPositions();
@@ -239,7 +235,7 @@ setInterval(function () {
             buildPaddles();
             }
         } else {
-            activeList.forEach(player => {player.setLives(3);
+            activeList.forEach(player => {player.lives = 3;
             });
             // livesL = livesR = livesU = livesD = 3;
             resetPositions();
