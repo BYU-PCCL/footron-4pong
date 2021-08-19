@@ -10,7 +10,6 @@
 
 /**
  * TODO
- *  - confirm start from all players?
  *  - async so you can pause for a couple seconds?
  *  - make code more efficient
  *  - stop connections when game has started
@@ -26,8 +25,11 @@
 
 messaging = new FootronMessaging.Messaging();
 messaging.mount();
-
 messaging.setLock(4);
+
+windowSize = window.innerHeight * .75;
+wallSize = windowSize;
+modifier = wallSize / 640;
 
 class Player {
     constructor(name, connection){
@@ -123,34 +125,30 @@ async function connectionHandler(connection){
     }
 }
 
+function closeHandler(){
+    // disconnects
+}
+
 function checkStart(player){
-    // console.log(`player.startState: ${player.startState}`);
-    if(!player.isAlive()) return true;
+    // if(!player.isAlive()) return true;
     return player.startState;
 }
 
-// this.messageHandler = this.messageHandler.bind(this);
-
 messaging.addMessageListener(messageHandler);
-
 messaging.addConnectionListener(connectionHandler);
+// messaging.addCloseListener(closeHandler);
 
-
-windowSize = window.innerHeight * .75;
-wallSize = windowSize;
-modifier = wallSize / 640;
 context = document.getElementById('c').getContext('2d');
 document.getElementById('c').width = wallSize;
 document.getElementById('c').height = wallSize;
 context.fillStyle = "#FFF";
 context.font = "60px monospace";
 paused = true;
-livesL = livesR = livesU = livesD = 3;
-resetPositions();
-ballX = getRandomArbitrary(wallSize * .2, wallSize * .8);
-ballY = getRandomArbitrary(wallSize * .2, wallSize * .8);
-ballVX = 7 * modifier; 
-ballVY = 7 * modifier;
+// resetPositions();
+ballX = getRandomArbitrary(wallSize * .3, wallSize * .7);
+ballY = getRandomArbitrary(wallSize * .3, wallSize * .7);
+ballVX = 5;
+ballVY = 5;
 if (ballX > wallSize/2){
     ballVX = - ballVX;
 } 
@@ -232,6 +230,8 @@ setInterval(function () {
             context.fillText("Play Again?", 170 * modifier,300 * modifier);
             context.closePath();
 
+
+
             if(auto){
                 activeList.forEach(player => {player.lives = 3;
                 });
@@ -240,29 +240,55 @@ setInterval(function () {
             buildPaddles();
             }
         } else {
+            // TODO this is repeat
+            if(playerMap.get("left").isAlive()){
+                ballX = 90; 
+                ballY = wallSize/2;
+                ballVX = 5;
+                ballVY = ballVY >= 0 ? 5 : -5;
+                resetPositions();
+            } else if(playerMap.get("right").isAlive()){
+                ballX = 540; 
+                ballY = wallSize/2; 
+                ballVX = -5; 
+                ballVY = ballVY >= 0 ? 5 : -5;
+            } else if(playerMap.get("up").isAlive()){
+                ballX = wallSize/2; 
+                ballY = 90; 
+                ballVY = 5; 
+                ballVX = ballVX >= 0 ? 5 : -5;
+            } else if(playerMap.get("down").isAlive()){
+                ballX = wallSize/2; 
+                ballY = 540; 
+                ballVY = -5; 
+                ballVX = ballVX >= 0 ? 5 : -5;
+            }
             activeList.forEach(player => {player.lives = 3;
             });
             resetPositions();
+            
             winner = "";
             buildPaddles();
+            
         }
     }
     context.beginPath();
     context.fillStyle = "white";
     context.closePath();
     // build ball
-    context.fillRect(ballX, ballY, 10 * modifier, 10 * modifier);
-        if(winner != ""){
-            context.beginPath();
-            context.fillStyle = "white";
-            context.fillText("Winner is: " + winner, 100 * modifier, 200 * modifier);
-            context.closePath();
-        }
+    buildBall();
+        // should not run???
+        // if(winner != ""){
+        //     context.beginPath();
+        //     context.fillStyle = "white";
+        //     context.fillText("testing is: " + winner, 100 * modifier, 200 * modifier);
+        //     context.closePath();
+        // }
         // location
         // context.fillText(Math.floor(ballX) + "," + Math.floor(ballY), 340 * modifier, 550 * modifier);
         
-        // speed
-        context.fillText(Math.floor(ballVX) + "," + Math.floor(ballVY), 400 * modifier, 610 * modifier);
+        // display speed
+        // context.fillText(Math.floor(ballVX) + "," + Math.floor(ballVY), 400 * modifier, 610 * modifier);
     
     
 }, 16) // Speed 15
@@ -284,6 +310,10 @@ function controls(){
     
 }
 
+function buildBall(){
+    context.fillRect(ballX, ballY, 10 * modifier, 10 * modifier);
+}
+
 function buildLines(){
     context.beginPath();
     context.fillStyle = "white";
@@ -294,6 +324,41 @@ function buildLines(){
         context.fillRect(lineCounter , wallSize/2, 10, 4);
         
     context.closePath();
+}
+
+function buildPaddles(){
+    if(playerMap.get("left")){
+        if(playerMap.get("left").isAlive()){
+            context.beginPath();
+            context.fillStyle = "#6166ff"; // blue
+            context.fillRect(20 * modifier, playerMap.get("left").paddlePos, 20 * modifier, 100 * modifier);
+            context.closePath();
+        }
+    }
+    if(playerMap.get("right")){
+        if(playerMap.get("right").isAlive()){
+            context.beginPath();
+            context.fillStyle = "#3de364"; // green
+            context.fillRect(600 * modifier, playerMap.get("right").paddlePos, 20 * modifier, 100 * modifier);
+            context.closePath();
+        }
+    }
+    if(playerMap.get("up")){
+        if(playerMap.get("up").isAlive()){
+            context.beginPath();
+            context.fillStyle = "#ff6161"; // red
+            context.fillRect(playerMap.get("up").paddlePos, 20 * modifier, 100 * modifier, 20 * modifier);
+            context.closePath();
+        }
+    }
+    if(playerMap.get("down")){
+        if(playerMap.get("down").isAlive()){
+            context.beginPath();
+            context.fillStyle = "#fffc61"; // yellow
+            context.fillRect(playerMap.get("down").paddlePos, 600 * modifier, 100 * modifier, 20 * modifier);
+            context.closePath();
+        }
+    }
 }
 
 function resetPositions(){
@@ -392,40 +457,7 @@ function bouncing(){
     
 }
 
-function buildPaddles(){
-    if(playerMap.get("left")){
-        if(playerMap.get("left").isAlive()){
-            context.beginPath();
-            context.fillStyle = "#6166ff"; // blue
-            context.fillRect(20 * modifier, playerMap.get("left").paddlePos, 20 * modifier, 100 * modifier);
-            context.closePath();
-        }
-    }
-    if(playerMap.get("right")){
-        if(playerMap.get("right").isAlive()){
-            context.beginPath();
-            context.fillStyle = "#3de364"; // green
-            context.fillRect(600 * modifier, playerMap.get("right").paddlePos, 20 * modifier, 100 * modifier);
-            context.closePath();
-        }
-    }
-    if(playerMap.get("up")){
-        if(playerMap.get("up").isAlive()){
-            context.beginPath();
-            context.fillStyle = "#ff6161"; // red
-            context.fillRect(playerMap.get("up").paddlePos, 20 * modifier, 100 * modifier, 20 * modifier);
-            context.closePath();
-        }
-    }
-    if(playerMap.get("down")){
-        if(playerMap.get("down").isAlive()){
-            context.beginPath();
-            context.fillStyle = "#fffc61"; // yellow
-            context.fillRect(playerMap.get("down").paddlePos, 600 * modifier, 100 * modifier, 20 * modifier);
-            context.closePath();
-        }
-    }
-}
+
 
 function displayLives(){
     activeList.forEach(player => {
