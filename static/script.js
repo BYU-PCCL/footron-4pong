@@ -14,11 +14,13 @@
  *  - async so you can pause for a couple seconds?
  *  - make code more efficient
  *  - stop connections when game has started
+ *  - fix reseting the ball after restarting the game
+ *  - manage disconnects
  */
 
 /**
  * Done
- *  - Colors
+ *  - 
  *
  */
 
@@ -34,6 +36,9 @@ class Player {
         this.lives = 3;
         this.name = name;
         this.connection = connection;
+        this.moveState = "stop";
+        this.paddlePos = 270 * modifier;
+        this.paddleVel = 0;
         if(name == "left" || name == "right"){
             this.move1 = "up";
             this.move2 = "down";
@@ -57,46 +62,60 @@ class Player {
             }
         }
     }
-}
+    
+    moveHandler(message){
+        this.moveState = message == 0 ? this.move1 : message == 1 ? "stop" : message == 2 ? this.move2 : this.moveState;
+        this.startButton = message == 3 ? true : false; 
+    }
+    
 
-moveL = moveR = moveU = moveD = "stop";
-activeList = [];
-lStart = rStart = uStart = dStart = false;
-lStartButton = rStartButton = uStartButton = dStartButton = false;
-
-// function messageHandler(left, right, up, down){
-// each json message should be in this format:
-// player: (left/right/up/down), movement: (left/right/up/down)
-function messageHandler(jmsg){
-    if(jmsg.player == "left"){
-        moveL = jmsg.movement == 0 ? "up" : jmsg.movement == 1 ? "stop" : jmsg.movement == 2 ? "down" : moveL;
-        // TODO: THIS IS BAD PLS FIX
-        playerMap.get("left").startButton = jmsg.movement == 3 ? true : false; 
-    } else if(jmsg.player == "right"){
-        moveR = jmsg.movement == 0 ? "up" : jmsg.movement == 1 ? "stop" : jmsg.movement == 2 ? "down" : moveR;
-        playerMap.get("right").startButton = jmsg.movement == 3 ? true : false; 
-    } else if(jmsg.player == "up"){
-        moveU = jmsg.movement == 0 ? "left" : jmsg.movement == 1 ? "stop" : jmsg.movement == 2 ? "right" : moveU;
-        playerMap.get("up").startButton = jmsg.movement == 3 ? true : false; 
-    } else if(jmsg.player == "down"){
-        moveD = jmsg.movement == 0 ? "left" : jmsg.movement == 1 ? "stop" : jmsg.movement == 2 ? "right" : moveD;
-        playerMap.get("down").startButton = jmsg.movement == 3 ? true : false; 
+    paddleMovement(){
+        this.paddlePos += this.paddleVel;
+        // wall stop
+        this.paddlePos = this.paddlePos < 0 ? 0 : this.paddlePos;
+        this.paddlePos = this.paddlePos > wallSize - 100 * modifier ? wallSize - 100 * modifier : this.paddlePos;
     }
 
+    paddlePhysics(){
+        this.paddleVel = 
+            this.moveState == this.move1 ? -moveSpd :
+            this.moveState == this.move2 ? moveSpd :
+            this.moveState == "stop" ? 0 :
+            this.paddleVel; 
+    }
+
+    resetPosition(){
+        this.paddlePos = 270 * modifier;
+        this.paddleVel = 0;
+        this.startState = false;
+    }
+
+    
 }
+
+activeList = [];
+
+function messageHandler(jmsg){
+    playerMap.get(jmsg.player).moveHandler(jmsg.movement);
+}
+
 let availablePlayers = ["left", "right", "up", "down"];
 const playerMap = new Map();    
 async function connectionHandler(connection){
     console.log(connection.getId());
     if(availablePlayers.length > 0){
+        ballX = ballY = 270 * modifier;
         const nextPlayer = availablePlayers.shift();
         connection.addLifecycleListener((paused) => paused || connection.sendMessage({player: nextPlayer}));
         await connection.accept();
         playerMap.set(nextPlayer, new Player(nextPlayer, connection));
-        // connection.sendMessage({player: availablePlayers[0]});
         console.log(`connected player: ${nextPlayer}`);
         activeList.push(playerMap.get(nextPlayer));
         resetPositions();
+
+        if(availablePlayers.length == 2){ // TODO Change to 4 later
+            messaging.setLock(true);
+        }
     }
      else {
         connection.deny();
@@ -144,7 +163,7 @@ if (ballY > wallSize/2){
 
 
 
-moveSpd = 10 * modifier;
+moveSpd = 9 * modifier;
 winner = "";
 auto = false;
 gameStarted = false;
@@ -155,7 +174,7 @@ setInterval(function () {
     // activeList.forEach(player => {
     //     console.log(`${player.name}: online`);
     // })
-    // console.log(moveL);
+    // console.log(playerMap.get("left").moveState);
     buildLines();
     buildPaddles();
     displayLives();
@@ -175,23 +194,10 @@ setInterval(function () {
         buildLines();
 
         // Paddle movement logic
-        paddleYL += paddleVL; 
-        paddleYR += paddleVR;
-        paddleXU += paddleVU; 
-        paddleXD += paddleVD;
+        activeList.forEach(player => {
+            player.paddleMovement();
+        })
         
-        // stopping paddle at wall logic
-        paddleYL = paddleYL < 0 ? 0 : paddleYL; 
-        paddleYL = paddleYL > wallSize - 100 * modifier ? wallSize - 100 * modifier : paddleYL;
-        
-        paddleYR = paddleYR < 0 ? 0 : paddleYR; 
-        paddleYR = paddleYR > wallSize - 100 * modifier ? wallSize - 100 * modifier : paddleYR;
-
-        paddleXU = paddleXU < 0 ? 0 : paddleXU; 
-        paddleXU = paddleXU > wallSize - 100 * modifier ? wallSize - 100 * modifier : paddleXU;
-
-        paddleXD = paddleXD < 0 ? 0 : paddleXD; 
-        paddleXD = paddleXD > wallSize - 100 * modifier ? wallSize - 100 * modifier : paddleXD;
         
         // Ball physics
         ballX += ballVX; 
@@ -229,7 +235,6 @@ setInterval(function () {
             if(auto){
                 activeList.forEach(player => {player.lives = 3;
                 });
-                // livesL = livesR = livesU = livesD = 3;
             resetPositions();
             winner = "";
             buildPaddles();
@@ -237,7 +242,6 @@ setInterval(function () {
         } else {
             activeList.forEach(player => {player.lives = 3;
             });
-            // livesL = livesR = livesU = livesD = 3;
             resetPositions();
             winner = "";
             buildPaddles();
@@ -268,12 +272,8 @@ setInterval(function () {
 // foomsg
 
 function controls(){
-    paddleVL = moveL == "up" ? -moveSpd : moveL == "down" ? moveSpd : moveL == "stop" ? 0 : paddleVL; 
-    paddleVR = moveR == "up" ? -moveSpd : moveR == "down" ? moveSpd : moveR == "stop" ? 0 : paddleVR;
-    paddleVU = moveU == "right" ? moveSpd : moveU == "left" ? -moveSpd : moveU == "stop" ? 0 : paddleVR;
-    paddleVD = moveD == "right" ? moveSpd : moveD == "left" ? -moveSpd : moveD == "stop" ? 0 : paddleVD;
-    
     activeList.forEach(player => {
+        player.paddlePhysics();
         if(player.startButton){
             player.startState = true;
             player.startButton = false;
@@ -298,36 +298,34 @@ function buildLines(){
 
 function resetPositions(){
     paused = true;
-    paddleYL = paddleYR = paddleXU = paddleXD= 270 * modifier;
-    paddleVL = paddleVR = paddleVU = paddleVD = 0;
     activeList.forEach(player => {
-        player.startState = false;
-    })
+        player.resetPosition();
+    });
     // restart = false;
 }
 
 function bouncing(){
     lBounce = rBounce = uBounce = dBounce = false;
     if(playerMap.get("left")){
-        if(playerMap.get("left").lives > 0){
+        if(playerMap.get("left").isAlive()){
         }
     } else {
         lBounce = true;
     }
     if(playerMap.get("right")){
-        if(playerMap.get("right").lives > 0){
+        if(playerMap.get("right").isAlive()){
         }
     } else {
         rBounce = true;
     }
     if(playerMap.get("up")){
-        if(playerMap.get("up").lives > 0){
+        if(playerMap.get("up").isAlive()){
         }
     } else {
         uBounce = true;
     }
     if(playerMap.get("down")){
-        if(playerMap.get("down").lives > 0){
+        if(playerMap.get("down").isAlive()){
         }
     } else {
         dBounce = true;
@@ -339,9 +337,18 @@ function bouncing(){
             ballVX = -ballVX;
         }
     } else {
-        if (ballX <= 40 * modifier && ballX >= 20 * modifier && ballY < paddleYL + 110 * modifier && ballY > paddleYL - 10 * modifier) {
+        // TODO
+        // paddleBounce(){
+        //     if(this.name == "left" || this.name == "right"){
+        //         if(ballX <= this.val1 * modifier && ballX >= this.val2 * modifier && ballY < this.paddlePos + 110 * modifier && ballY > this.paddlePos - 10 * modifier){
+        //             ballVX = -ballVX + (0.05 * this.sideMod); 
+        //             ballVY += (ballY - this.paddlePos - 45 * modifier) / 20;
+        //         }
+        //     }
+        // }
+        if (ballX <= 40 * modifier && ballX >= 20 * modifier && ballY < playerMap.get("left").paddlePos + 110 * modifier && ballY > playerMap.get("left").paddlePos - 10 * modifier) {
             ballVX = -ballVX + 0.05; 
-            ballVY += (ballY - paddleYL - 45 * modifier) / 20;
+            ballVY += (ballY - playerMap.get("left").paddlePos - 45 * modifier) / 20;
         }
     }
     
@@ -351,9 +358,9 @@ function bouncing(){
             ballVX =-ballVX;
         }
     } else {
-        if (ballX <= 610 * modifier && ballX >= 590 * modifier && ballY < paddleYR + 110 * modifier && ballY > paddleYR - 10 * modifier) {
+        if (ballX <= 610 * modifier && ballX >= 590 * modifier && ballY < playerMap.get("right").paddlePos + 110 * modifier && ballY > playerMap.get("right").paddlePos - 10 * modifier) {
             ballVX = -ballVX - 0.05; 
-            ballVY += (ballY - paddleYR - 45 * modifier) / 20;
+            ballVY += (ballY - playerMap.get("right").paddlePos - 45 * modifier) / 20;
         }
     }
 
@@ -363,9 +370,9 @@ function bouncing(){
             ballVY = -ballVY;
         }
     } else {
-        if (ballY <= 40 * modifier && ballY >= 20 * modifier && ballX < paddleXU + 110 * modifier && ballX > paddleXU - 10 * modifier) {
+        if (ballY <= 40 * modifier && ballY >= 20 * modifier && ballX < playerMap.get("up").paddlePos + 110 * modifier && ballX > playerMap.get("up").paddlePos - 10 * modifier) {
             ballVY = -ballVY + 0.05; 
-            ballVX += (ballX - paddleXU - 45 * modifier) / 20;
+            ballVX += (ballX - playerMap.get("up").paddlePos - 45 * modifier) / 20;
         }
     }
 
@@ -375,9 +382,9 @@ function bouncing(){
             ballVY = -ballVY;
         }
     } else {
-        if (ballY <= 610 * modifier && ballY >= 590 * modifier && ballX < paddleXD + 110 * modifier && ballX > paddleXD - 10 * modifier) {
+        if (ballY <= 610 * modifier && ballY >= 590 * modifier && ballX < playerMap.get("down").paddlePos + 110 * modifier && ballX > playerMap.get("down").paddlePos - 10 * modifier) {
             ballVY = -ballVY - 0.05; 
-            ballVX += (ballX - paddleXD - 45 * modifier) / 20;
+            ballVX += (ballX - playerMap.get("down").paddlePos - 45 * modifier) / 20;
         }
     }
     
@@ -385,108 +392,38 @@ function bouncing(){
     
 }
 
-// function bouncing(){
-//     activeList.forEach(player => {
-//         if(player.isAlive()){
-//             if(player.name == "left"){
-//                 if (ballX <= 40 * modifier && ballX >= 20 * modifier && ballY < paddleYL + 110 * modifier && ballY > paddleYL - 10 * modifier) {
-//                     ballVX = -ballVX + 0.05; 
-//                     ballVY += (ballY - paddleYL - 45 * modifier) / 20;
-//                 } else if (ballX <= 0) {
-//                     ballX = 0; 
-//                     ballVX = -ballVX;
-//                 }
-//             } else if (player.name == "right") {
-//                 if (ballX <= 610 * modifier && ballX >= 590 * modifier && ballY < paddleYR + 110 * modifier && ballY > paddleYR - 10 * modifier) {
-//                     ballVX = -ballVX - 0.05; 
-//                     ballVY += (ballY - paddleYR - 45 * modifier) / 20;
-//                 } else if (ballX >= wallSize - 10) {
-//                     ballX = wallSize - 10; 
-//                     ballVX =-ballVX;
-//                 }
-//             } else if (player.name == "up"){
-//                 if (ballY <= 40 * modifier && ballY >= 20 * modifier && ballX < paddleXU + 110 * modifier && ballX > paddleXU - 10 * modifier) {
-//                     ballVY = -ballVY + 0.05; 
-//                     ballVX += (ballX - paddleXU - 45 * modifier) / 20;
-//                 } else if (ballY <= 0) {
-//                     ballY = 0; 
-//                     ballVY = -ballVY;
-//                 }
-//             } else if (player.name == "down"){
-//                 if (ballY <= 610 * modifier && ballY >= 590 * modifier && ballX < paddleXD + 110 * modifier && ballX > paddleXD - 10 * modifier) {
-//                     ballVY = -ballVY - 0.05; 
-//                     ballVX += (ballX - paddleXD - 45 * modifier) / 20;
-//                 } else if (ballY >= wallSize - 10) {
-//                     ballY = wallSize - 10; 
-//                     ballVY = -ballVY;
-//                 }
-//             }
-//         }
-//     })
-//     if (ballX <= 0) {
-//         ballX = 0; 
-//         ballVX = -ballVX;
-//     }
-//     if (ballX >= wallSize - 10) {
-//         ballX = wallSize - 10; 
-//         ballVX =-ballVX;
-//     }
-//     if (ballY <= 0) {
-//         ballY = 0; 
-//         ballVY = -ballVY;
-//     }
-//     if (ballY >= wallSize - 10) {
-//         ballY = wallSize - 10; 
-//         ballVY = -ballVY;
-//     }
-//     // availablePlayers.forEach(playerName => {
-//     //     if(playerName == "left"){
-//     //         if (ballX <= 0) {
-//     //             ballX = 0; 
-//     //             ballVX = -ballVX;
-//     //         }
-//     //     } else if (playerName == "right") {
-//     //         if (ballX >= wallSize - 10) {
-//     //             ballX = wallSize - 10; 
-//     //             ballVX =-ballVX;
-//     //         }
-//     //     } else if (playerName == "up"){
-//     //         if (ballY <= 0) {
-//     //             ballY = 0; 
-//     //             ballVY = -ballVY;
-//     //         }
-//     //     } else if (playerName == "down"){
-//     //         if (ballY >= wallSize - 10) {
-//     //             ballY = wallSize - 10; 
-//     //             ballVY = -ballVY;
-//     //         }
-//     //     }
-//     // })
-// }
-
 function buildPaddles(){
-    if(livesL > 0 && playerMap.get("left") != null){
-        context.beginPath();
-        context.fillStyle = "#6166ff"; // blue
-        context.fillRect(20 * modifier, paddleYL, 20 * modifier, 100 * modifier);
-        context.closePath();
+    if(playerMap.get("left")){
+        if(playerMap.get("left").isAlive()){
+            context.beginPath();
+            context.fillStyle = "#6166ff"; // blue
+            context.fillRect(20 * modifier, playerMap.get("left").paddlePos, 20 * modifier, 100 * modifier);
+            context.closePath();
+        }
     }
-    if(livesR > 0 && playerMap.get("right") != null){
-        context.beginPath();
-        context.fillStyle = "#3de364"; // green
-        context.fillRect(600 * modifier, paddleYR, 20 * modifier, 100 * modifier);
+    if(playerMap.get("right")){
+        if(playerMap.get("right").isAlive()){
+            context.beginPath();
+            context.fillStyle = "#3de364"; // green
+            context.fillRect(600 * modifier, playerMap.get("right").paddlePos, 20 * modifier, 100 * modifier);
+            context.closePath();
+        }
     }
-    if(livesU > 0 && playerMap.get("up") != null){
-        context.beginPath();
-        context.fillStyle = "#ff6161"; // red
-        context.fillRect(paddleXU, 20 * modifier, 100 * modifier, 20 * modifier);
-        context.closePath();
+    if(playerMap.get("up")){
+        if(playerMap.get("up").isAlive()){
+            context.beginPath();
+            context.fillStyle = "#ff6161"; // red
+            context.fillRect(playerMap.get("up").paddlePos, 20 * modifier, 100 * modifier, 20 * modifier);
+            context.closePath();
+        }
     }
-    if(livesD > 0 && playerMap.get("down") != null){
-        context.beginPath();
-        context.fillStyle = "#fffc61"; // yellow
-        context.fillRect(paddleXD, 600 * modifier, 100 * modifier, 20 * modifier);
-        context.closePath();
+    if(playerMap.get("down")){
+        if(playerMap.get("down").isAlive()){
+            context.beginPath();
+            context.fillStyle = "#fffc61"; // yellow
+            context.fillRect(playerMap.get("down").paddlePos, 600 * modifier, 100 * modifier, 20 * modifier);
+            context.closePath();
+        }
     }
 }
 
