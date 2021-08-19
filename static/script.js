@@ -56,12 +56,19 @@ class Player {
     }
 
     displayLives(){
+        color = ""
         if(this.isAlive()){
             document.getElementById(this.name).textContent = this.lives;
             if(this.startState && !roundStarted){
-                document.getElementById(this.name).style.color = 'green';
+                color = "#4ef542";
             } else {
-                document.getElementById(this.name).style.color = 'white';
+                if(this.isAlive()){
+                    color = "white";
+                } else {
+                    color = "black";
+                }
+                document.getElementById(this.name).style.color = color;
+                
             }
         }
     }
@@ -170,9 +177,6 @@ roundStarted = false;
 
 
 setInterval(function () {
-    // activeList.forEach(player => {
-    //     console.log(`${player.name}: online`);
-    // })
     // console.log(playerMap.get("left").moveState);
     buildLines();
     buildPaddles();
@@ -231,14 +235,12 @@ setInterval(function () {
             context.fillText("Play Again?", 170 * modifier,300 * modifier);
             context.closePath();
 
-
-
             if(auto){
                 activeList.forEach(player => {player.lives = 3;
                 });
-            resetPositions();
-            winner = "";
-            buildPaddles();
+                resetPositions();
+                winner = "";
+                buildPaddles();
             }
         } else {
             // TODO this is repeat
@@ -276,99 +278,16 @@ setInterval(function () {
     context.beginPath();
     context.fillStyle = "white";
     context.closePath();
-    // build ball
     buildBall();
-        // should not run???
-        // if(winner != ""){
-        //     context.beginPath();
-        //     context.fillStyle = "white";
-        //     context.fillText("testing is: " + winner, 100 * modifier, 200 * modifier);
-        //     context.closePath();
-        // }
-        // location
-        // context.fillText(Math.floor(ballX) + "," + Math.floor(ballY), 340 * modifier, 550 * modifier);
-        
-        // display speed
-        // context.fillText(Math.floor(ballVX) + "," + Math.floor(ballVY), 400 * modifier, 610 * modifier);
+
+    // display ball location
+    // context.fillText(Math.floor(ballX) + "," + Math.floor(ballY), 340 * modifier, 550 * modifier);
+    
+    // display speed
+    // context.fillText(Math.floor(ballVX) + "," + Math.floor(ballVY), 400 * modifier, 610 * modifier);
     
     
 }, 16) // Speed 15
-
-// controls
-
-// foomsg
-
-function controls(){
-    activeList.forEach(player => {
-        player.paddlePhysics();
-        if(player.startButton){
-            player.startState = true;
-            player.startButton = false;
-            console.log(`Ready: " ${player.name}`);
-        }
-
-    });
-    
-}
-
-function buildBall(){
-    context.fillRect(ballX, ballY, 10 * modifier, 10 * modifier);
-}
-
-function buildLines(){
-    context.beginPath();
-    context.fillStyle = "white";
-    for (lineCounter = 5; lineCounter < wallSize; lineCounter += 20)
-        context.fillRect(wallSize/2, lineCounter, 4, 10);
-
-    for (lineCounter = 5; lineCounter < wallSize; lineCounter += 20)
-        context.fillRect(lineCounter , wallSize/2, 10, 4);
-        
-    context.closePath();
-}
-
-function buildPaddles(){
-    if(playerMap.get("left")){
-        if(playerMap.get("left").isAlive()){
-            context.beginPath();
-            context.fillStyle = "#6166ff"; // blue
-            context.fillRect(20 * modifier, playerMap.get("left").paddlePos, 20 * modifier, 100 * modifier);
-            context.closePath();
-        }
-    }
-    if(playerMap.get("right")){
-        if(playerMap.get("right").isAlive()){
-            context.beginPath();
-            context.fillStyle = "#3de364"; // green
-            context.fillRect(600 * modifier, playerMap.get("right").paddlePos, 20 * modifier, 100 * modifier);
-            context.closePath();
-        }
-    }
-    if(playerMap.get("up")){
-        if(playerMap.get("up").isAlive()){
-            context.beginPath();
-            context.fillStyle = "#ff6161"; // red
-            context.fillRect(playerMap.get("up").paddlePos, 20 * modifier, 100 * modifier, 20 * modifier);
-            context.closePath();
-        }
-    }
-    if(playerMap.get("down")){
-        if(playerMap.get("down").isAlive()){
-            context.beginPath();
-            context.fillStyle = "#fffc61"; // yellow
-            context.fillRect(playerMap.get("down").paddlePos, 600 * modifier, 100 * modifier, 20 * modifier);
-            context.closePath();
-        }
-    }
-}
-
-function resetPositions(){
-    paused = true;
-    activeList.forEach(player => {
-        player.resetPosition();
-    });
-    // restart = false;
-}
 
 function bouncing(){
     lBounce = rBounce = uBounce = dBounce = false;
@@ -458,7 +377,69 @@ function bouncing(){
     
 }
 
+function buildBall(){
+    context.fillRect(ballX, ballY, 10 * modifier, 10 * modifier);
+}
 
+function buildLines(){
+    context.beginPath();
+    context.fillStyle = "white";
+    for (lineCounter = 5; lineCounter < wallSize; lineCounter += 20)
+        context.fillRect(wallSize/2, lineCounter, 4, 10);
+
+    for (lineCounter = 5; lineCounter < wallSize; lineCounter += 20)
+        context.fillRect(lineCounter , wallSize/2, 10, 4);
+        
+    context.closePath();
+}
+
+function buildPaddles(){
+    if(playerMap.get("left")){
+        if(playerMap.get("left").isAlive()){
+            context.beginPath();
+            context.fillStyle = "#6166ff"; // blue
+            context.fillRect(20 * modifier, playerMap.get("left").paddlePos, 20 * modifier, 100 * modifier);
+            context.closePath();
+        }
+    }
+    if(playerMap.get("right")){
+        if(playerMap.get("right").isAlive()){
+            context.beginPath();
+            context.fillStyle = "#3de364"; // green
+            context.fillRect(600 * modifier, playerMap.get("right").paddlePos, 20 * modifier, 100 * modifier);
+            context.closePath();
+        }
+    }
+    if(playerMap.get("up")){
+        if(playerMap.get("up").isAlive()){
+            context.beginPath();
+            context.fillStyle = "#ff6161"; // red
+            context.fillRect(playerMap.get("up").paddlePos, 20 * modifier, 100 * modifier, 20 * modifier);
+            context.closePath();
+        }
+    }
+    if(playerMap.get("down")){
+        if(playerMap.get("down").isAlive()){
+            context.beginPath();
+            context.fillStyle = "#fffc61"; // yellow
+            context.fillRect(playerMap.get("down").paddlePos, 600 * modifier, 100 * modifier, 20 * modifier);
+            context.closePath();
+        }
+    }
+}
+
+function controls(){
+    activeList.forEach(player => {
+        player.paddlePhysics();
+        if(player.startButton){
+            player.startState = true;
+            player.startButton = false;
+            console.log(`Ready: " ${player.name}`);
+        }
+
+    });
+    
+}
 
 function displayLives(){
     activeList.forEach(player => {
@@ -467,6 +448,7 @@ function displayLives(){
     
 }
 
+// TODO
 function lifeTracking(){
     activeList.forEach(player => {
         if(player.isAlive()){
@@ -518,6 +500,22 @@ function lifeTracking(){
             }
         }
     });
+}
+
+function resetPositions(){
+    paused = true;
+    activeList.forEach(player => {
+        player.resetPosition();
+    });
+    // restart = false;
+}
+
+function restart(){
+    if (activeList.every(checkStart)){
+        return true;
+    } else {
+        return false;
+    }
 }
 
 function winCondition(){
@@ -611,12 +609,4 @@ function crazymode(){
     auto = true;
     paddleYL = paddleYR = ballY - (50 * modifier);
     paddleXU = paddleXD = ballX - 50 * modifier;
-}
-
-function restart(){
-    if (activeList.every(checkStart)){
-        return true;
-    } else {
-        return false;
-    }
 }
