@@ -15,6 +15,7 @@
  *  - stop connections when game has started
  *  - fix reseting the ball after restarting the game
  *  - manage disconnects
+ *  - make controls better (colors? correct words? etc)
  */
 
 /**
