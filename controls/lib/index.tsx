@@ -98,6 +98,8 @@ const yellow = css`
 
 const ControlsComponent = (): JSX.Element => {
   const [playerName, setPlayerName] = useState<string | undefined>();
+  const [button1, setButton1] = useState<string | undefined>();
+  const [button2, setButton2] = useState<string | undefined>();
 
   const { sendMessage } = useMessaging<{ player: string }>((message) => {
     setPlayerName(message.player);
@@ -154,6 +156,15 @@ const ControlsComponent = (): JSX.Element => {
   } else if (playerName === "down") {
     color = yellow;
   }
+
+  if (playerName === "left" || playerName === "right") {
+    setButton1("Down");
+    setButton2("Up");
+  } else if (playerName === "up" || playerName === "down") {
+    setButton1("Left");
+    setButton2("Right");
+  }
+
   return (
     <div css={buttonStyle}>
       <div id={"name"}>{playerName || "unknown"}</div>
@@ -174,19 +185,19 @@ const ControlsComponent = (): JSX.Element => {
             contained: buttonClasses.contained,
           }}
         >
-          Down
+          {"Button 1" || button1}
         </Button>
         <Button
-            type="button"
-            variant={"contained"}
-            id={"left"}
-            onTouchStart={up}
-            onTouchEnd={stop}
-            classes={{
-              contained: buttonClasses.contained,
-            }}
+          type="button"
+          variant={"contained"}
+          id={"left"}
+          onTouchStart={up}
+          onTouchEnd={stop}
+          classes={{
+            contained: buttonClasses.contained,
+          }}
         >
-          Up
+          {"Button 2" || button2}
         </Button>
       </div>
 
