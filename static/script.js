@@ -16,6 +16,12 @@
  *  - fix reseting the ball after restarting the game
  *  - manage disconnects
  *  - make controls better (colors? correct words? etc)
+ *  - 
+ */
+/**
+ * Later
+ *  - Use images instead of drawing the paddles? 
+ *  -- https://stackoverflow.com/questions/3057162/moving-an-image-across-a-html-canvas
  */
 
 /**
@@ -39,16 +45,10 @@ class Player {
         this.lives = 3;
         this.name = name;
         this.connection = connection;
-        this.moveState = "stop";
+        this.moveState = 1;
         this.paddlePos = 270 * modifier;
         this.paddleVel = 0;
-        if(name == "left" || name == "right"){
-            this.move1 = "up";
-            this.move2 = "down";
-        } else if(name == "up" || name == "down"){
-            this.move1 = "up";
-            this.move2 = "down";
-        }
+
     }
 
     isAlive(){
@@ -74,7 +74,7 @@ class Player {
     }
     
     moveHandler(message){
-        this.moveState = message == 0 ? this.move1 : message == 1 ? "stop" : message == 2 ? this.move2 : this.moveState;
+        this.moveState = message;
         this.startButton = message == 3 ? true : false; 
     }
     
@@ -88,10 +88,22 @@ class Player {
 
     paddlePhysics(){
         this.paddleVel = 
-            this.moveState == this.move1 ? -moveSpd :
-            this.moveState == this.move2 ? moveSpd :
-            this.moveState == "stop" ? 0 :
+            this.moveState == 0 ? -moveSpd :
+            this.moveState == 1 ? 0 :
+            this.moveState == 2 ? moveSpd :
             this.paddleVel; 
+    }
+
+    translateMoveState(){
+        if(this.name == "left" || this.name == "right"){
+            move1 = "up";
+            move2 = "down";
+        } else if(this.name == "up" || this.name == "down"){
+            move1 = "left";
+            move2 = "right";
+        }
+        return this.moveState == 0 ? move1 : this.moveState == 1 ? "stop" : this.moveState == 2 ? move2 : "error";
+        
     }
 
     resetPosition(){
@@ -103,7 +115,7 @@ class Player {
     
 }
 
-activeList = [];
+activePlayers = [];
 
 function messageHandler(jmsg){
     playerMap.get(jmsg.player).moveHandler(jmsg.movement);
@@ -113,14 +125,14 @@ let availablePlayers = ["left", "right", "up", "down"];
 const playerMap = new Map();    
 async function connectionHandler(connection){
     console.log(connection.getId());
-    if(availablePlayers.length > 0){
+    if(availablePlayers.length > 0 && !roundStarted){
         ballX = ballY = 270 * modifier;
         const nextPlayer = availablePlayers.shift();
         connection.addLifecycleListener((paused) => paused || connection.sendMessage({player: nextPlayer}));
         await connection.accept();
         playerMap.set(nextPlayer, new Player(nextPlayer, connection));
         console.log(`connected player: ${nextPlayer}`);
-        activeList.push(playerMap.get(nextPlayer));
+        activePlayers.push(playerMap.get(nextPlayer));
         resetPositions();
 
         if(availablePlayers.length == 2){ // TODO Change to 4 later
@@ -133,8 +145,23 @@ async function connectionHandler(connection){
     }
 }
 
-function closeHandler(){
+function closeHandler(conection){
     // disconnects
+    // if we want the existing game to continue:
+    // listCopy = [...activePlayers];
+    newList = [];
+    activePlayers.forEach(player => {
+        if(connection.getId() != player.connection.getId()){
+            newList.push(player);
+        } else {
+            availablePlayers.push(player.name);
+            playerMap.delete(player.name);
+            activePlayers.delete(player);
+        }
+    })
+    activePlayers = newList;
+    // should the game just be over? should the game just start over?
+
 }
 
 function checkStart(player){
@@ -183,7 +210,7 @@ setInterval(function () {
     displayLives();
     controls();
     if(winner == ""){
-        if (!activeList.every(checkStart) && paused && !auto){
+        if (!activePlayers.every(checkStart) && paused && !auto){
             roundStarted = false;
             return;
         } 
@@ -197,7 +224,7 @@ setInterval(function () {
         buildLines();
 
         // Paddle movement logic
-        activeList.forEach(player => {
+        activePlayers.forEach(player => {
             player.paddleMovement();
         })
         
@@ -236,7 +263,7 @@ setInterval(function () {
             context.closePath();
 
             if(auto){
-                activeList.forEach(player => {player.lives = 3;
+                activePlayers.forEach(player => {player.lives = 3;
                 });
                 resetPositions();
                 winner = "";
@@ -266,7 +293,7 @@ setInterval(function () {
                 ballVY = -5; 
                 ballVX = ballVX >= 0 ? 5 : -5;
             }
-            activeList.forEach(player => {player.lives = 3;
+            activePlayers.forEach(player => {player.lives = 3;
             });
             resetPositions();
             
@@ -429,7 +456,7 @@ function buildPaddles(){
 }
 
 function controls(){
-    activeList.forEach(player => {
+    activePlayers.forEach(player => {
         player.paddlePhysics();
         if(player.startButton){
             player.startState = true;
@@ -442,7 +469,7 @@ function controls(){
 }
 
 function displayLives(){
-    activeList.forEach(player => {
+    activePlayers.forEach(player => {
         player.displayLives();
     })
     
@@ -450,7 +477,7 @@ function displayLives(){
 
 // TODO
 function lifeTracking(){
-    activeList.forEach(player => {
+    activePlayers.forEach(player => {
         if(player.isAlive()){
             if(player.name == "left"){
                 if (ballX < -10 * modifier) {
@@ -504,14 +531,14 @@ function lifeTracking(){
 
 function resetPositions(){
     paused = true;
-    activeList.forEach(player => {
+    activePlayers.forEach(player => {
         player.resetPosition();
     });
     // restart = false;
 }
 
 function restart(){
-    if (activeList.every(checkStart)){
+    if (activePlayers.every(checkStart)){
         return true;
     } else {
         return false;
@@ -519,10 +546,10 @@ function restart(){
 }
 
 function winCondition(){
-    if (activeList.length > 1){
+    if (activePlayers.length > 1){
         oneAlive = false;
         moreAlive = false;
-        activeList.forEach(player => {
+        activePlayers.forEach(player => {
             if(player.isAlive()){
                 if(winner != ""){
                     moreAlive = true;
@@ -534,14 +561,14 @@ function winCondition(){
         if(moreAlive){
             winner = "";
         } else {
-            activeList.forEach(player => {
+            activePlayers.forEach(player => {
                 player.startState = false;
             })
         }
-    } else if (activeList.length == 1){
-        if (!activeList[0].isAlive()){
+    } else if (activePlayers.length == 1){
+        if (!activePlayers[0].isAlive()){
             winner = "L"
-            activeList[0].startState = false;
+            activePlayers[0].startState = false;
         }
     }
     
