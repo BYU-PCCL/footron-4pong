@@ -46,7 +46,7 @@ class Player {
         this.name = name;
         this.connection = connection;
         this.moveState = 1;
-        this.paddlePos = 270 * modifier;
+        this.paddlePos = wallSize/2;
         this.paddleVel = 0;
 
     }
@@ -166,14 +166,8 @@ function closeHandler(connection){
     // should the game just be over? should the game just start over?
     // reopen lock?
 
-}
+    winCondition();
 
-function checkStart(){
-    if(activePlayers.length > 0){
-        return activePlayers.every(player => {return player.startState});
-    } else {
-        return false;
-    }
 }
 
 messaging.addMessageListener(messageHandler);
@@ -207,6 +201,7 @@ winner = "";
 auto = false;
 gameStarted = false;
 roundStarted = false;
+gameMode = "multi";
 
 
 setInterval(function () {
@@ -214,6 +209,7 @@ setInterval(function () {
     //     console.log(playerMap.get("left").moveState)
     // }
     buildLines();
+    buildBall();
     buildPaddles();
     displayLives();
     controls();
@@ -223,7 +219,13 @@ setInterval(function () {
             if ( availablePlayers.length != 4) return;
         } 
         else {
-            // gameStarted = true;
+            if(!roundStarted){
+                if(activePlayers.length == 1){
+                    gameMode = "single";
+                } else {
+                    gameMode = "multi";
+                }
+            }
             roundStarted = true;
         }
         context.clearRect(0, 0, wallSize, wallSize);
@@ -246,7 +248,6 @@ setInterval(function () {
         // autoplay();
         // crazymode();
         
-        
         // Scoring
         lifeTracking();
 
@@ -263,7 +264,7 @@ setInterval(function () {
         
         
     } else {
-        if(!restart()){
+        if(!checkStart()){
             context.beginPath();
             context.fillStyle = "white";
             context.fillText("Winner is: " + winner, 100 * modifier,200 * modifier);
@@ -275,7 +276,7 @@ setInterval(function () {
                 });
                 resetPositions();
                 winner = "";
-                buildPaddles();
+                // buildPaddles();
             }
         } else {
             // TODO this is repeat
@@ -301,7 +302,7 @@ setInterval(function () {
             resetPositions();
             
             winner = "";
-            buildPaddles();
+            // buildPaddles();
             
         }
     }
@@ -461,6 +462,14 @@ function buildPaddles(){
     }
 }
 
+function checkStart(){
+    if(activePlayers.length > 0){
+        return activePlayers.every(player => {return player.startState});
+    } else {
+        return false;
+    }
+}
+
 function controls(){
     activePlayers.forEach(player => {
         player.paddlePhysics();
@@ -558,19 +567,11 @@ function resetPositions(){
         player.resetPosition();
         player.startState = false;
     });
-    // restart = false;
-}
-
-function restart(){
-    if (checkStart()){
-        return true;
-    } else {
-        return false;
-    }
 }
 
 function winCondition(){
-    if (activePlayers.length > 1){
+    // if (activePlayers.length > 1){
+    if (gameMode == "multi"){
         oneAlive = false;
         moreAlive = false;
         activePlayers.forEach(player => {
@@ -589,10 +590,11 @@ function winCondition(){
                 player.startState = false;
             })
         }
-    } else if (activePlayers.length == 1){
+    } else if (gameMode = "single"){
         if (!activePlayers[0].isAlive()){
             winner = activePlayers[0].name;
             activePlayers[0].startState = false;
+            roundStarted = false;
         }
     }
     
