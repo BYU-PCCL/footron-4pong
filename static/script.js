@@ -12,11 +12,9 @@
  * TODO
  *  - async so you can pause for a couple seconds?
  *  - make code more efficient
- *  - stop connections when game has started
- *  - fix reseting the ball after restarting the game
  *  - manage disconnects
  *  - make controls better (colors? correct words? etc)
- *  - 
+ *  - fix building the paddles (sometimes there's 2 of each and it looks bad)
  */
 /**
  * Later
@@ -184,12 +182,8 @@ ballX = getRandomArbitrary(wallSize * .3, wallSize * .7);
 ballY = getRandomArbitrary(wallSize * .3, wallSize * .7);
 ballVX = 5;
 ballVY = 5;
-if (ballX > wallSize/2){
-    ballVX = - ballVX;
-} 
-if (ballY > wallSize/2){
-    ballVY = - ballVY;
-} 
+if (ballX > wallSize/2) ballVX = - ballVX;
+if (ballY > wallSize/2) ballVY = - ballVY;
 // ballVX = -1 * getRandomArbitrary(4,8) * modifier; 
 // ballVY = 1 * getRandomArbitrary(4,8) * modifier;
 
@@ -570,33 +564,37 @@ function resetPositions(){
 }
 
 function winCondition(){
-    // if (activePlayers.length > 1){
-    if (gameMode == "multi"){
-        oneAlive = false;
-        moreAlive = false;
-        activePlayers.forEach(player => {
-            if(player.isAlive()){
-                if(winner != ""){
-                    moreAlive = true;
-                } else {
-                    winner = player.name;
-                }
-            }
-        })
-        if(moreAlive){
-            winner = "";
-        } else {
+    if(roundStarted){
+        // if (activePlayers.length > 1){
+        if (gameMode == "multi"){
+            oneAlive = false;
+            moreAlive = false;
             activePlayers.forEach(player => {
-                player.startState = false;
+                if(player.isAlive()){
+                    if(winner != ""){
+                        moreAlive = true;
+                    } else {
+                        winner = player.name;
+                    }
+                }
             })
-        }
-    } else if (gameMode = "single"){
-        if (!activePlayers[0].isAlive()){
-            winner = activePlayers[0].name;
-            activePlayers[0].startState = false;
-            roundStarted = false;
+            if(moreAlive){
+                winner = "";
+            } else {
+                roundStarted = false;
+                activePlayers.forEach(player => {
+                    player.startState = false;
+                })
+            }
+        } else if (gameMode = "single"){
+            if (!activePlayers[0].isAlive()){
+                winner = activePlayers[0].name;
+                activePlayers[0].startState = false;
+                roundStarted = false;
+            }
         }
     }
+    
     
 
     
