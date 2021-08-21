@@ -276,23 +276,33 @@ setInterval(function () {
             }
         } else {
             // TODO this is repeat
-            if (playerMap.get("left")){
-                if (playerMap.get("left").isAlive()){
-                    resetBall("left");
-                }
-            } else if (playerMap.get("right")){
-                if(playerMap.get("right").isAlive()){
-                    resetBall("right");
-                }
-            } else if(playerMap.get("up")) {
-                if(playerMap.get("up").isAlive()){
-                    resetBall("up");
-                }
-            } else if (playerMap.get("down")){
-                if(playerMap.get("down").isAlive()){
-                    resetBall("down");
-                }
+            if(activePlayers.length == 1){
+                resetBall(activePlayers[0].name);
             }
+            activePlayers.forEach(player => {
+                if(playerMap.get(player.name)){
+                    if (playerMap.get(player.name).isAlive()){
+                        resetBall(player.name);
+                    }
+                }
+            });
+            // if (playerMap.get("left")){
+            //     if (playerMap.get("left").isAlive()){
+            //         resetBall("left");
+            //     }
+            // } else if (playerMap.get("right")){
+            //     if(playerMap.get("right").isAlive()){
+            //         resetBall("right");
+            //     }
+            // } else if(playerMap.get("up")) {
+            //     if(playerMap.get("up").isAlive()){
+            //         resetBall("up");
+            //     }
+            // } else if (playerMap.get("down")){
+            //     if(playerMap.get("down").isAlive()){
+            //         resetBall("down");
+            //     }
+            // }
             activePlayers.forEach(player => {player.lives = 3;
             });
             resetPositions();
