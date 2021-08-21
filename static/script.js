@@ -56,21 +56,20 @@ class Player {
     }
 
     displayLives(){
-        color = ""
-        if(this.isAlive()){
-            document.getElementById(this.name).textContent = this.lives;
-            if(this.startState && !roundStarted){
-                color = "#4ef542";
+        var color = "";
+        document.getElementById(this.name).textContent = this.lives;
+        if(this.startState && !roundStarted){
+            color = "#4ef542";
+        } else {
+            if(this.isAlive()){
+                color = "white";
             } else {
-                if(this.isAlive()){
-                    color = "white";
-                } else {
-                    color = "black";
-                }
-                document.getElementById(this.name).style.color = color;
-                
+                color = "black";
             }
+            
+            
         }
+        document.getElementById(this.name).style.color = color;
     }
     
     moveHandler(message){
@@ -114,25 +113,28 @@ class Player {
 
     
 }
-
+let availablePlayers = ["left", "right", "up", "down"];
+const playerMap = new Map();
 activePlayers = [];
 
 function messageHandler(jmsg){
     playerMap.get(jmsg.player).moveHandler(jmsg.movement);
 }
-
-let availablePlayers = ["left", "right", "up", "down"];
-const playerMap = new Map();    
+    
 async function connectionHandler(connection){
     console.log(connection.getId());
     if(availablePlayers.length > 0 && !roundStarted){
         ballX = ballY = 270 * modifier;
+        ballVX = Math.abs(ballVX)
         const nextPlayer = availablePlayers.shift();
         connection.addLifecycleListener((paused) => paused || connection.sendMessage({player: nextPlayer}));
         await connection.accept();
         playerMap.set(nextPlayer, new Player(nextPlayer, connection));
         console.log(`connected player: ${nextPlayer}`);
         activePlayers.push(playerMap.get(nextPlayer));
+
+        connection.addCloseListener(() => closeHandler(connection));
+
         resetPositions();
 
         if(availablePlayers.length == 2){ // TODO Change to 4 later
@@ -145,33 +147,37 @@ async function connectionHandler(connection){
     }
 }
 
-function closeHandler(conection){
-    // disconnects
+function closeHandler(connection){
     // if we want the existing game to continue:
-    // listCopy = [...activePlayers];
     newList = [];
     activePlayers.forEach(player => {
         if(connection.getId() != player.connection.getId()){
             newList.push(player);
         } else {
+            console.log(`Player disconnected: ${player.name}`);
+            player.lives = 0;
+            player.displayLives()
             availablePlayers.push(player.name);
             playerMap.delete(player.name);
-            activePlayers.delete(player);
         }
     })
+    // is this a hacky way to delete the player from the active players?
     activePlayers = newList;
     // should the game just be over? should the game just start over?
+    // reopen lock?
 
 }
 
-function checkStart(player){
-    // if(!player.isAlive()) return true;
-    return player.startState;
+function checkStart(){
+    if(activePlayers.length > 0){
+        return activePlayers.every(player => {return player.startState});
+    } else {
+        return false;
+    }
 }
 
 messaging.addMessageListener(messageHandler);
 messaging.addConnectionListener(connectionHandler);
-// messaging.addCloseListener(closeHandler);
 
 context = document.getElementById('c').getContext('2d');
 document.getElementById('c').width = wallSize;
@@ -204,15 +210,17 @@ roundStarted = false;
 
 
 setInterval(function () {
-    // console.log(playerMap.get("left").moveState);
+    // if(playerMap.get("left")){
+    //     console.log(playerMap.get("left").moveState)
+    // }
     buildLines();
     buildPaddles();
     displayLives();
     controls();
     if(winner == ""){
-        if (!activePlayers.every(checkStart) && paused && !auto){
+        if (!checkStart() && !auto){
             roundStarted = false;
-            return;
+            if ( availablePlayers.length != 4) return;
         } 
         else {
             // gameStarted = true;
@@ -271,27 +279,22 @@ setInterval(function () {
             }
         } else {
             // TODO this is repeat
-            if(playerMap.get("left").isAlive()){
-                ballX = 90; 
-                ballY = wallSize/2;
-                ballVX = 5;
-                ballVY = ballVY >= 0 ? 5 : -5;
-                resetPositions();
-            } else if(playerMap.get("right").isAlive()){
-                ballX = 540; 
-                ballY = wallSize/2; 
-                ballVX = -5; 
-                ballVY = ballVY >= 0 ? 5 : -5;
-            } else if(playerMap.get("up").isAlive()){
-                ballX = wallSize/2; 
-                ballY = 90; 
-                ballVY = 5; 
-                ballVX = ballVX >= 0 ? 5 : -5;
-            } else if(playerMap.get("down").isAlive()){
-                ballX = wallSize/2; 
-                ballY = 540; 
-                ballVY = -5; 
-                ballVX = ballVX >= 0 ? 5 : -5;
+            if (playerMap.get("left")){
+                if (playerMap.get("left").isAlive()){
+                    resetBall("left");
+                }
+            } else if (playerMap.get("right")){
+                if(playerMap.get("right").isAlive()){
+                    resetBall("right");
+                }
+            } else if(playerMap.get("up")) {
+                if(playerMap.get("up").isAlive()){
+                    resetBall("up");
+                }
+            } else if (playerMap.get("down")){
+                if(playerMap.get("down").isAlive()){
+                    resetBall("down");
+                }
             }
             activePlayers.forEach(player => {player.lives = 3;
             });
@@ -308,7 +311,7 @@ setInterval(function () {
     buildBall();
 
     // display ball location
-    // context.fillText(Math.floor(ballX) + "," + Math.floor(ballY), 340 * modifier, 550 * modifier);
+    context.fillText(Math.floor(ballX) + "," + Math.floor(ballY), 340 * modifier, 550 * modifier);
     
     // display speed
     // context.fillText(Math.floor(ballVX) + "," + Math.floor(ballVY), 400 * modifier, 610 * modifier);
@@ -405,7 +408,10 @@ function bouncing(){
 }
 
 function buildBall(){
+    context.beginPath();
+    context.fillStyle = "white";
     context.fillRect(ballX, ballY, 10 * modifier, 10 * modifier);
+    context.closePath();
 }
 
 function buildLines(){
@@ -483,10 +489,7 @@ function lifeTracking(){
                 if (ballX < -10 * modifier) {
                     player.lives--; 
                     if(player.isAlive()){
-                        ballX = 90; 
-                        ballY = wallSize/2;
-                        ballVX = 5;
-                        ballVY = ballVY >= 0 ? 5 : -5;
+                        resetBall("left"); // TODO change this somehow to "player.name"
                         resetPositions();
                     }
                 }
@@ -494,10 +497,7 @@ function lifeTracking(){
                 if (ballX > 630 * modifier) {
                     player.lives--; 
                     if(player.isAlive()){
-                        ballX = 540; 
-                        ballY = wallSize/2; 
-                        ballVX = -5; 
-                        ballVY = ballVY >= 0 ? 5 : -5;
+                        resetBall("right");
                         resetPositions();
                     }
                 }
@@ -505,10 +505,7 @@ function lifeTracking(){
                 if (ballY < -10 * modifier) {
                     player.lives--; 
                     if(player.isAlive()){
-                        ballX = wallSize/2; 
-                        ballY = 90; 
-                        ballVY = 5; 
-                        ballVX = ballVX >= 0 ? 5 : -5;
+                        resetBall("up");
                         resetPositions();
                     }
                 }
@@ -517,10 +514,7 @@ function lifeTracking(){
                     player.lives--; 
                 
                     if(player.isAlive()){
-                        ballX = wallSize/2; 
-                        ballY = 540; 
-                        ballVY = -5; 
-                        ballVX = ballVX >= 0 ? 5 : -5;
+                        resetBall("up");
                         resetPositions();
                     }
                 }
@@ -529,16 +523,46 @@ function lifeTracking(){
     });
 }
 
+function resetBall(player = ""){
+    if(player == ""){
+        ballX = wallSize/2; 
+        ballY = wallSize/2;
+        // make this random velocity
+        ballVX = ballVY = 5;
+    } else if(player == "left"){
+        ballX = wallSize * .1; 
+        ballY = wallSize/2;
+        ballVX = 5;
+        ballVY = ballVY >= 0 ? 5 : -5;
+    } else if (player == "right"){
+        ballX = wallSize * .9; 
+        ballY = wallSize/2; 
+        ballVX = -5; 
+        ballVY = ballVY >= 0 ? 5 : -5;
+    } else if (player == "up"){
+        ballX = wallSize/2; 
+        ballY = wallSize * .1; 
+        ballVY = 5; 
+        ballVX = ballVX >= 0 ? 5 : -5;
+    } else if (player == "down"){
+        ballX = wallSize/2; 
+        ballY = wallSize * .9; 
+        ballVY = -5; 
+        ballVX = ballVX >= 0 ? 5 : -5;
+    }
+}
+
 function resetPositions(){
     paused = true;
     activePlayers.forEach(player => {
         player.resetPosition();
+        player.startState = false;
     });
     // restart = false;
 }
 
 function restart(){
-    if (activePlayers.every(checkStart)){
+    if (checkStart()){
         return true;
     } else {
         return false;
@@ -567,7 +591,7 @@ function winCondition(){
         }
     } else if (activePlayers.length == 1){
         if (!activePlayers[0].isAlive()){
-            winner = "L"
+            winner = activePlayers[0].name;
             activePlayers[0].startState = false;
         }
     }
