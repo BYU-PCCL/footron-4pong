@@ -15,6 +15,7 @@
  *  - manage disconnects
  *  - make controls better (colors? correct words? etc)
  *  - fix building the paddles (sometimes there's 2 of each and it looks bad)
+ *  - Timer + countdown for timer (overall timer, countdown till you have to leave? etc)
  */
 /**
  * Later
@@ -196,6 +197,7 @@ auto = false;
 gameStarted = false;
 roundStarted = false;
 gameMode = "multi";
+gameOver = false;
 
 
 setInterval(function () {
@@ -311,8 +313,10 @@ setInterval(function () {
     // display speed
     // context.fillText(Math.floor(ballVX) + "," + Math.floor(ballVY), 400 * modifier, 610 * modifier);
     
-    
+    // for timer
+    // publishEndTime();
 }, 16) // Speed 15
+
 
 function bouncing(){
     lBounce = rBounce = uBounce = dBounce = false;
@@ -524,6 +528,34 @@ function lifeTracking(){
             }
         }
     });
+}
+
+// TODO
+function publishEndTime(){
+    if (gameOver) {
+        if (winner = ""){
+            gameOver = false;
+        } else {
+            return;
+        }
+    }
+
+    let endTime;
+    // TODO fix when you know what increment it is (seconds, miliseconds)
+    if(winner = ""){
+        endTime = (Date.now() / 1000) + 10000;
+    } else {
+        gameOver = true;
+        endTime = (Date.now() / 1000) + 100;
+    }
+    
+    fetch('http://localhost:8000/current', {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({"id": "pong4", "end_time": Math.floor(endTime)}), // change pong4 to 4pong sometime
+    })
 }
 
 function resetBall(player = ""){
