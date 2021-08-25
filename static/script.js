@@ -123,7 +123,8 @@ function messageHandler(jmsg){
     
 async function connectionHandler(connection){
     console.log(connection.getId());
-    if(availablePlayers.length > 0 && !roundStarted){
+    // console.log(`roundStarted: ${roundStarted}`);
+    if(availablePlayers.length > 0 && !gameStarted){
         ballX = ballY = 270 * modifier;
         ballVX = Math.abs(ballVX)
         const nextPlayer = availablePlayers.shift();
@@ -198,7 +199,7 @@ gameMode = "multi";
 gameOver = false;
 
 
-setInterval(function () {
+const interval = setInterval(function () {
     // if(playerMap.get("left")){
     //     console.log(playerMap.get("left").moveState)
     // }
@@ -222,6 +223,7 @@ setInterval(function () {
             }
             messaging.setLock(true);
             roundStarted = true;
+            gameStarted = true;
         }
         context.clearRect(0, 0, wallSize, wallSize);
         
@@ -259,57 +261,14 @@ setInterval(function () {
         
         
     } else {
-        if(!checkStart()){
-            context.beginPath();
-            context.fillStyle = "white";
-            context.fillText("Winner is: " + winner, 100 * modifier,200 * modifier);
-            context.fillText("Play Again?", 170 * modifier,300 * modifier);
-            context.closePath();
-
-            if(auto){
-                activePlayers.forEach(player => {player.lives = 3;
-                });
-                resetPositions();
-                winner = "";
-                // buildPaddles();
-            }
-        } else {
-            // TODO this is repeat
-            if(activePlayers.length == 1){
-                resetBall(activePlayers[0].name);
-            }
-            activePlayers.forEach(player => {
-                if(playerMap.get(player.name)){
-                    if (playerMap.get(player.name).isAlive()){
-                        resetBall(player.name);
-                    }
-                }
-            });
-            // if (playerMap.get("left")){
-            //     if (playerMap.get("left").isAlive()){
-            //         resetBall("left");
-            //     }
-            // } else if (playerMap.get("right")){
-            //     if(playerMap.get("right").isAlive()){
-            //         resetBall("right");
-            //     }
-            // } else if(playerMap.get("up")) {
-            //     if(playerMap.get("up").isAlive()){
-            //         resetBall("up");
-            //     }
-            // } else if (playerMap.get("down")){
-            //     if(playerMap.get("down").isAlive()){
-            //         resetBall("down");
-            //     }
-            // }
-            activePlayers.forEach(player => {player.lives = 3;
-            });
-            resetPositions();
-            
-            winner = "";
-            // buildPaddles();
-            
-        }
+        // clearInterval(interval);
+        context.beginPath();
+        context.fillStyle = "white";
+        context.fillText("Winner is: " + winner, 100 * modifier,200 * modifier);
+        context.fillText("Thanks for Playing!", 170 * modifier,300 * modifier);
+        context.closePath();
+        endGame();
+        clearInterval(interval);
     }
     context.beginPath();
     context.fillStyle = "white";
@@ -326,6 +285,7 @@ setInterval(function () {
     // publishEndTime();
 }, 16) // Speed 15
 
+const delay = ms => new Promise(res => setTimeout(res, ms));
 
 function bouncing(){
     lBounce = rBounce = uBounce = dBounce = false;
@@ -499,7 +459,11 @@ function displayLives(){
 }
 
 async function endGame(){
-    setTimeout(function(){messaging.setLock(false);}, 5000);
+    await delay(5000)
+    messaging.setLock(false);
+    console.log("lock released");
+    // console.log("it worked");
+
 }
 
 // TODO
