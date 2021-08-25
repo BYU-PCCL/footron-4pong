@@ -123,7 +123,6 @@ function messageHandler(jmsg){
     
 async function connectionHandler(connection){
     console.log(connection.getId());
-    // console.log(`roundStarted: ${roundStarted}`);
     if(availablePlayers.length > 0 && !gameStarted){
         ballX = ballY = 270 * modifier;
         ballVX = Math.abs(ballVX)
