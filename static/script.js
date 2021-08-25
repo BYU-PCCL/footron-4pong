@@ -16,6 +16,7 @@
  *  - make controls better (colors? correct words? etc)
  *  - fix building the paddles (sometimes there's 2 of each and it looks bad)
  *  - Timer + countdown for timer (overall timer, countdown till you have to leave? etc)
+ *  - fix controls logic
  */
 /**
  * Later
@@ -136,9 +137,6 @@ async function connectionHandler(connection){
 
         resetPositions();
 
-        if(availablePlayers.length == 2){ // TODO Change to 4 later
-            messaging.setLock(true);
-        }
     }
      else {
         connection.deny();
@@ -222,6 +220,7 @@ setInterval(function () {
                     gameMode = "multi";
                 }
             }
+            messaging.setLock(true);
             roundStarted = true;
         }
         context.clearRect(0, 0, wallSize, wallSize);
@@ -472,6 +471,7 @@ function buildPaddles(){
 
 function checkStart(){
     if(activePlayers.length > 0){
+
         return activePlayers.every(player => {return player.startState});
     } else {
         return false;
@@ -496,6 +496,10 @@ function displayLives(){
         player.displayLives();
     })
     
+}
+
+async function endGame(){
+    setTimeout(function(){messaging.setLock(false);}, 5000);
 }
 
 // TODO
