@@ -85,11 +85,20 @@ class Player {
     }
 
     paddlePhysics(){
-        this.paddleVel = 
-            this.moveState == 0 ? -moveSpd :
-            this.moveState == 1 ? 0 :
-            this.moveState == 2 ? moveSpd :
-            this.paddleVel; 
+        if(this.name != "right"){
+            this.paddleVel = 
+                this.moveState == 0 ? -moveSpd :
+                this.moveState == 1 ? 0 :
+                this.moveState == 2 ? moveSpd :
+                this.paddleVel; 
+        } else {
+            this.paddleVel = 
+                this.moveState == 2 ? -moveSpd :
+                this.moveState == 1 ? 0 :
+                this.moveState == 0 ? moveSpd :
+                this.paddleVel; 
+        }
+        
     }
 
     translateMoveState(){
@@ -158,10 +167,11 @@ function closeHandler(connection){
             playerMap.delete(player.name);
         }
     })
-    // is this a hacky way to delete the player from the active players?
     activePlayers = newList;
-    // should the game just be over? should the game just start over?
-    // reopen lock?
+
+    if(activePlayers.length == 0 && gameStarted){
+        endGame();
+    }
 
     winCondition();
 
@@ -505,34 +515,6 @@ function lifeTracking(){
             }
         }
     });
-}
-
-// TODO
-function publishEndTime(){
-    if (gameOver) {
-        if (winner = ""){
-            gameOver = false;
-        } else {
-            return;
-        }
-    }
-
-    let endTime;
-    // TODO fix when you know what increment it is (seconds, miliseconds)
-    if(winner = ""){
-        endTime = (Date.now() / 1000) + 10000;
-    } else {
-        gameOver = true;
-        endTime = (Date.now() / 1000) + 100;
-    }
-    
-    fetch('http://localhost:8000/current', {
-        method: 'PATCH',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({"id": "pong4", "end_time": Math.floor(endTime)}), // change pong4 to 4pong sometime
-    })
 }
 
 function resetBall(player = ""){
