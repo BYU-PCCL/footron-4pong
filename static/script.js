@@ -32,7 +32,6 @@
 
 messaging = new FootronMessaging.Messaging();
 messaging.mount();
-messaging.setLock(4);
 
 windowSize = window.innerHeight * .75;
 wallSize = windowSize;
@@ -122,6 +121,7 @@ function messageHandler(jmsg){
 }
     
 async function connectionHandler(connection){
+    messaging.setLock(4);
     console.log(connection.getId());
     if(availablePlayers.length > 0 && !gameStarted){
         ballX = ballY = 270 * modifier;
