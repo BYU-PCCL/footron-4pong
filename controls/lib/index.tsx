@@ -104,6 +104,7 @@ const ControlsComponent = (): JSX.Element => {
       >{playerName || "unknown"}</div>
       <Button
           type="button"
+          disableRipple
           id={"start"}
           style={{
             display: 'flex',
@@ -119,6 +120,7 @@ const ControlsComponent = (): JSX.Element => {
       <div>
         <Button
           type="button"
+          disableRipple
           variant={"contained"}
           id={"right"}
           size={"large"}
@@ -138,6 +140,7 @@ const ControlsComponent = (): JSX.Element => {
         </Button>
         <Button
           type="button"
+          disableRipple
           variant={"contained"}
           id={"left"}
           onTouchStart={down}
