@@ -36,7 +36,7 @@ const buttonStyle = css`
   
 `;
 
-function getButton1Name(name:string){
+function getButton1Name(name:(string | undefined)){
   return (name === "left" ? "Up" :
       name === "right" ? "Up" :
           name === "up" ? "Left" :
@@ -44,7 +44,7 @@ function getButton1Name(name:string){
                   "Button1")
 }
 
-function getButton2Name(name:string){
+function getButton2Name(name:(string | undefined)){
   return (name === "left" ? "Down" :
       name === "right" ? "Down" :
           name === "up" ? "Right" :
@@ -52,7 +52,7 @@ function getButton2Name(name:string){
                   "Button2")
 }
 
-function getButtonColor(name:string){
+function getButtonColor(name:(string | undefined)){
   return (name === "left" ? blue :
       name === "right" ? green :
           name === "up" ? red :
@@ -60,7 +60,7 @@ function getButtonColor(name:string){
                   "black")
 }
 
-function getButtonTextColor(name:string){
+function getButtonTextColor(name:(string | undefined)){
   return (name === "down" ? "black" : "whitesmoke")
 }
 
