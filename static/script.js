@@ -258,9 +258,7 @@ const interval = setInterval(function () {
             gameStarted = true;
         }
         context.clearRect(0, 0, wallSize, wallSize);
-        if(gameStarted) {
-            if(activePlayers.length == 0) messaging.setLock(false);
-        } 
+        if(activePlayers.length == 0) messaging.setLock(false); 
         
         // dashed lines
         buildLines();
