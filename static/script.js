@@ -85,19 +85,32 @@ class Player {
     }
 
     paddlePhysics(){
-        if(this.name != "right"){
-            this.paddleVel = 
-                this.moveState == 0 ? -moveSpd :
-                this.moveState == 1 ? 0 :
-                this.moveState == 2 ? moveSpd :
-                this.paddleVel; 
-        } else {
+        if(this.name == ("left", "right")){
             this.paddleVel = 
                 this.moveState == 2 ? -moveSpd :
                 this.moveState == 1 ? 0 :
                 this.moveState == 0 ? moveSpd :
                 this.paddleVel; 
+        } else {
+            this.paddleVel = 
+                this.moveState == 0 ? -moveSpd :
+                this.moveState == 1 ? 0 :
+                this.moveState == 2 ? moveSpd :
+                this.paddleVel; 
         }
+        // if(this.name != "right"){
+        //     this.paddleVel = 
+        //         this.moveState == 0 ? -moveSpd :
+        //         this.moveState == 1 ? 0 :
+        //         this.moveState == 2 ? moveSpd :
+        //         this.paddleVel; 
+        // } else {
+        //     this.paddleVel = 
+        //         this.moveState == 2 ? -moveSpd :
+        //         this.moveState == 1 ? 0 :
+        //         this.moveState == 0 ? moveSpd :
+        //         this.paddleVel; 
+        // }
         
     }
 
@@ -130,8 +143,8 @@ function messageHandler(jmsg){
 }
     
 async function connectionHandler(connection){
-    messaging.setLock(4);
-    console.log(connection.getId());
+    await messaging.setLock(4);
+    // console.log(connection.getId());
     if(availablePlayers.length > 0 && !gameStarted){
         ballX = ballY = 270 * modifier;
         ballVX = Math.abs(ballVX)
@@ -139,7 +152,7 @@ async function connectionHandler(connection){
         connection.addLifecycleListener((paused) => paused || connection.sendMessage({player: nextPlayer}));
         await connection.accept();
         playerMap.set(nextPlayer, new Player(nextPlayer, connection));
-        console.log(`connected player: ${nextPlayer}`);
+        console.log(`Player Connected: ${nextPlayer}`);
         activePlayers.push(playerMap.get(nextPlayer));
 
         connection.addCloseListener(() => closeHandler(connection));
@@ -149,7 +162,7 @@ async function connectionHandler(connection){
     }
      else {
         connection.deny();
-        console.log("Too many connections???");
+        console.log("Connection Denied");
     }
 }
 
@@ -170,6 +183,11 @@ function closeHandler(connection){
     activePlayers = newList;
 
     if(activePlayers.length == 0 && gameStarted){
+        disconnected = true;
+        // context.beginPath();
+        // context.fillStyle = "white";
+        // context.fillText("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAzz", 100 * modifier,200 * modifier);
+        // context.closePath();
         endGame();
     }
 
@@ -199,13 +217,18 @@ if (ballY > wallSize/2) ballVY = - ballVY;
 
 
 
-moveSpd = 9 * modifier;
-winner = "";
 auto = false;
-gameStarted = false;
-roundStarted = false;
+disconnected = false;
 gameMode = "multi";
 gameOver = false;
+gameStarted = false;
+moveSpd = 9 * modifier;
+roundStarted = false;
+winner = "";
+
+
+
+
 
 
 const interval = setInterval(function () {
@@ -235,6 +258,9 @@ const interval = setInterval(function () {
             gameStarted = true;
         }
         context.clearRect(0, 0, wallSize, wallSize);
+        if(gameStarted) {
+            if(activePlayers.length == 0) messaging.setLock(false);
+        } 
         
         // dashed lines
         buildLines();
@@ -273,11 +299,17 @@ const interval = setInterval(function () {
         // clearInterval(interval);
         context.beginPath();
         context.fillStyle = "white";
-        context.fillText("Winner is: " + winner, 100 * modifier,200 * modifier);
-        context.fillText("Thanks for Playing!", 170 * modifier,300 * modifier);
+        context.fillText("Winner is: " + winner, windowSize * .1 , windowSize * .1);
+        context.fillText("Thanks for Playing!", windowSize * .1 , windowSize * .2);
         context.closePath();
         endGame();
         clearInterval(interval);
+    }
+    if(disconnected){
+        context.beginPath();
+        context.fillStyle = "white";
+        context.fillText("All Players Disconnected", windowSize * .1 , windowSize * .1);
+        context.closePath();
     }
     context.beginPath();
     context.fillStyle = "white";
@@ -285,7 +317,7 @@ const interval = setInterval(function () {
     buildBall();
 
     // display ball location
-    context.fillText(Math.floor(ballX) + "," + Math.floor(ballY), 340 * modifier, 550 * modifier);
+    // context.fillText(Math.floor(ballX) + "," + Math.floor(ballY), 340 * modifier, 550 * modifier);
     
     // display speed
     // context.fillText(Math.floor(ballVX) + "," + Math.floor(ballVY), 400 * modifier, 610 * modifier);
@@ -323,6 +355,10 @@ function bouncing(){
         dBounce = true;
     }
     
+    bounceSpeed  = 0;
+    if(gameMode == "multi") bounceSpeed = .1;
+    else bounceSpeed = .3; 
+
     if(lBounce){
         if (ballX <= 0) {
             ballX = 0; 
@@ -333,13 +369,13 @@ function bouncing(){
         // paddleBounce(){
         //     if(this.name == "left" || this.name == "right"){
         //         if(ballX <= this.val1 * modifier && ballX >= this.val2 * modifier && ballY < this.paddlePos + 110 * modifier && ballY > this.paddlePos - 10 * modifier){
-        //             ballVX = -ballVX + (0.05 * this.sideMod); 
+        //             ballVX = -ballVX + (bounceSpeed * this.sideMod); 
         //             ballVY += (ballY - this.paddlePos - 45 * modifier) / 20;
         //         }
         //     }
         // }
         if (ballX <= 40 * modifier && ballX >= 20 * modifier && ballY < playerMap.get("left").paddlePos + 110 * modifier && ballY > playerMap.get("left").paddlePos - 10 * modifier) {
-            ballVX = -ballVX + 0.05; 
+            ballVX = -ballVX + bounceSpeed; 
             ballVY += (ballY - playerMap.get("left").paddlePos - 45 * modifier) / 20;
         }
     }
@@ -351,7 +387,7 @@ function bouncing(){
         }
     } else {
         if (ballX <= 610 * modifier && ballX >= 590 * modifier && ballY < playerMap.get("right").paddlePos + 110 * modifier && ballY > playerMap.get("right").paddlePos - 10 * modifier) {
-            ballVX = -ballVX - 0.05; 
+            ballVX = -ballVX - bounceSpeed; 
             ballVY += (ballY - playerMap.get("right").paddlePos - 45 * modifier) / 20;
         }
     }
@@ -363,7 +399,7 @@ function bouncing(){
         }
     } else {
         if (ballY <= 40 * modifier && ballY >= 20 * modifier && ballX < playerMap.get("up").paddlePos + 110 * modifier && ballX > playerMap.get("up").paddlePos - 10 * modifier) {
-            ballVY = -ballVY + 0.05; 
+            ballVY = -ballVY + bounceSpeed; 
             ballVX += (ballX - playerMap.get("up").paddlePos - 45 * modifier) / 20;
         }
     }
@@ -375,7 +411,7 @@ function bouncing(){
         }
     } else {
         if (ballY <= 610 * modifier && ballY >= 590 * modifier && ballX < playerMap.get("down").paddlePos + 110 * modifier && ballX > playerMap.get("down").paddlePos - 10 * modifier) {
-            ballVY = -ballVY - 0.05; 
+            ballVY = -ballVY - bounceSpeed; 
             ballVX += (ballX - playerMap.get("down").paddlePos - 45 * modifier) / 20;
         }
     }
@@ -453,7 +489,7 @@ function controls(){
         if(player.startButton){
             player.startState = true;
             player.startButton = false;
-            console.log(`Ready: " ${player.name}`);
+            console.log(`Ready: ${player.name}`);
         }
 
     });
@@ -470,7 +506,7 @@ function displayLives(){
 async function endGame(){
     await delay(5000)
     messaging.setLock(false);
-    console.log("lock released");
+    console.log("Lock Released");
     // console.log("it worked");
 
 }
@@ -578,6 +614,10 @@ function winCondition(){
                 })
             }
         } else if (gameMode = "single"){
+            if (activePlayers.length == 0) {
+                endGame();
+                return;
+            }
             if (!activePlayers[0].isAlive()){
                 winner = activePlayers[0].name;
                 activePlayers[0].startState = false;
