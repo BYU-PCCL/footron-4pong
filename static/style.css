@@ -16,6 +16,22 @@ body {
   font-size: 75px;
   text-align: center;
   user-select: none;
+  /* bottom: 0; */
+}
+
+.text{
+  color: black;
+  font-size: 75px;
+  text-align: center;
+  user-select: none;
+}
+
+.title{
+  color: white;
+  font-size: 75px;
+  text-align: center;
+  user-select: none;
+  top: 100px;
 }
 
 canvas {
