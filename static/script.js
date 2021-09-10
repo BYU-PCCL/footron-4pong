@@ -76,6 +76,31 @@ class Player {
         this.startButton = message == 3 ? true : false; 
     }
     
+    outOfBounds(){
+        // if(this.name == "left" || this.name == "up") return -10;
+        // else return 630;
+
+        if(this.name == "left"){
+            if (ballX < -10 * modifier) {
+                return true;
+            }
+        } else if (this.name == "right"){
+            if (ballX > 630 * modifier) {
+                return true;
+            }
+        } else if (this.name == "up"){
+            if (ballY < -10 * modifier) {
+                return true;
+            }
+        } else if (this.name == "down"){
+            if (ballY > 630 * modifier) {
+                return true;
+            }
+        }
+
+        return false;
+
+    }
 
     paddleMovement(){
         this.paddlePos += this.paddleVel;
@@ -252,13 +277,13 @@ const interval = setInterval(function () {
                 } else {
                     gameMode = "multi";
                 }
+                messaging.setLock(true);
             }
-            messaging.setLock(true);
             roundStarted = true;
             gameStarted = true;
         }
         context.clearRect(0, 0, wallSize, wallSize);
-        if(activePlayers.length == 0) messaging.setLock(false); 
+        if(activePlayers.length == 0 && messaging.lock) messaging.setLock(false); 
         
         // dashed lines
         buildLines();
@@ -297,7 +322,7 @@ const interval = setInterval(function () {
         // clearInterval(interval);
         context.beginPath();
         context.fillStyle = "white";
-        context.fillText("Winner is: " + winner, windowSize * .1 , windowSize * .1);
+        context.fillText("Winner is: " + winner.toUpperCase(), windowSize * .1 , windowSize * .1);
         context.fillText("Thanks for Playing!", windowSize * .1 , windowSize * .2);
         context.closePath();
         endGame();
@@ -513,40 +538,48 @@ async function endGame(){
 function lifeTracking(){
     activePlayers.forEach(player => {
         if(player.isAlive()){
-            if(player.name == "left"){
-                if (ballX < -10 * modifier) {
-                    player.lives--; 
-                    if(player.isAlive()){
-                        resetBall("left"); // TODO change this somehow to "player.name"
-                        resetPositions();
-                    }
-                }
-            } else if (player.name == "right"){
-                if (ballX > 630 * modifier) {
-                    player.lives--; 
-                    if(player.isAlive()){
-                        resetBall("right");
-                        resetPositions();
-                    }
-                }
-            } else if (player.name == "up"){
-                if (ballY < -10 * modifier) {
-                    player.lives--; 
-                    if(player.isAlive()){
-                        resetBall("up");
-                        resetPositions();
-                    }
-                }
-            } else if (player.name == "down"){
-                if (ballY > 630 * modifier) {
-                    player.lives--; 
-                
-                    if(player.isAlive()){
-                        resetBall("up");
-                        resetPositions();
-                    }
+            if (player.outOfBounds()) {
+                player.lives--; 
+                if(player.isAlive()){
+                    resetBall(player.name);
+                    resetPositions();
                 }
             }
+
+            // if(player.name == "left"){
+            //     if (ballX < -10 * modifier) {
+            //         player.lives--; 
+            //         if(player.isAlive()){
+            //             resetBall("left"); // TODO change this somehow to "player.name"
+            //             resetPositions();
+            //         }
+            //     }
+            // } else if (player.name == "right"){
+            //     if (ballX > 630 * modifier) {
+            //         player.lives--; 
+            //         if(player.isAlive()){
+            //             resetBall("right");
+            //             resetPositions();
+            //         }
+            //     }
+            // } else if (player.name == "up"){
+            //     if (ballY < -10 * modifier) {
+            //         player.lives--; 
+            //         if(player.isAlive()){
+            //             resetBall("up");
+            //             resetPositions();
+            //         }
+            //     }
+            // } else if (player.name == "down"){
+            //     if (ballY > 630 * modifier) {
+            //         player.lives--; 
+                
+            //         if(player.isAlive()){
+            //             resetBall("up");
+            //             resetPositions();
+            //         }
+            //     }
+            // }
         }
     });
 }
