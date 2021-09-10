@@ -30,14 +30,14 @@ function getButton1Name(name:(string | undefined)){
       name === "right" ? "Up" :
           name === "up" ? "Left" :
               name === "down" ? "Left" :
-                  "Button1")
+                  "1")
 }
 function getButton2Name(name:(string | undefined)){
   return (name === "left" ? "Down" :
       name === "right" ? "Down" :
           name === "up" ? "Right" :
               name === "down" ? "Right" :
-                  "Button2")
+                  "2")
 }
 function getButtonColor(name:(string | undefined)){
   return (name === "left" ? blue :
