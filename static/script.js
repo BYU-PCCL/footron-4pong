@@ -267,6 +267,15 @@ const interval = setInterval(function () {
     controls();
     if(winner == ""){
         if (!checkStart() && !auto){
+            context.fillStyle = "white";
+            if(!gameStarted){
+                context.fillText("To Join:", windowSize * .07 , windowSize * .1);
+                context.fillText("Scan the QR code (1-4 players)", windowSize * .1 , windowSize * .15);
+            
+            }
+            context.fillText("To Start:", windowSize * .07 , windowSize * .25);
+            context.fillText("All players the start button", windowSize * .1 , windowSize * .3);
+            context.closePath();
             roundStarted = false;
             if ( availablePlayers.length != 4) return;
         } 
@@ -322,8 +331,9 @@ const interval = setInterval(function () {
         // clearInterval(interval);
         context.beginPath();
         context.fillStyle = "white";
-        context.fillText("Winner is: " + winner.toUpperCase(), windowSize * .1 , windowSize * .1);
-        context.fillText("Thanks for Playing!", windowSize * .1 , windowSize * .2);
+        context.fillText("GAME OVER", windowSize * .1 , windowSize * .1);
+        context.fillText("Winner is: " + winner.toUpperCase(), windowSize * .1 , windowSize * .2);
+        context.fillText("Thanks for Playing!", windowSize * .1 , windowSize * .3);
         context.closePath();
         endGame();
         clearInterval(interval);
