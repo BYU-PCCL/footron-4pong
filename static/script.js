@@ -77,9 +77,6 @@ class Player {
     }
     
     outOfBounds(){
-        // if(this.name == "left" || this.name == "up") return -10;
-        // else return 630;
-
         if(this.name == "left"){
             if (ballX < -10 * modifier) {
                 return true;
@@ -240,8 +237,6 @@ if (ballY > wallSize/2) ballVY = - ballVY;
 // ballVY = 1 * getRandomArbitrary(4,8) * modifier;
 
 
-
-
 auto = false;
 disconnected = false;
 gameMode = "multi";
@@ -250,10 +245,6 @@ gameStarted = false;
 moveSpd = 9 * modifier;
 roundStarted = false;
 winner = "";
-
-
-
-
 
 
 const interval = setInterval(function () {
@@ -268,13 +259,8 @@ const interval = setInterval(function () {
     if(winner == ""){
         if (!checkStart() && !auto){
             context.fillStyle = "white";
-            if(!gameStarted){
-                context.fillText("To Join:", windowSize * .07 , windowSize * .1);
-                context.fillText("Scan the QR code (1-4 players)", windowSize * .1 , windowSize * .15);
-            
-            }
-            context.fillText("To Start:", windowSize * .07 , windowSize * .25);
-            context.fillText("All players the start button", windowSize * .1 , windowSize * .3);
+            context.fillText("To Start:", windowSize * .07 , windowSize * .3);
+            context.fillText("All players press \"Start\"", windowSize * .1 , windowSize * .35);
             context.closePath();
             roundStarted = false;
             if ( availablePlayers.length != 4) return;
@@ -324,6 +310,20 @@ const interval = setInterval(function () {
         // Build paddles + ball
         buildPaddles();
         winCondition();
+
+        if(!gameStarted){
+            context.fillStyle = "white";
+            context.fillText("To Join:", windowSize * .07 , windowSize * .1);
+            context.fillText("Scan the QR code", windowSize * .1 , windowSize * .15);
+            context.fillText("(1-4 Players)", windowSize * .1 , windowSize * .2);
+            context.closePath();
+
+            context.fillStyle = "white";
+            context.fillText("Game Modes:", windowSize * .07 , windowSize * .65);
+            context.fillText("Single Player: Score points", windowSize * .1 , windowSize * .7);
+            context.closePath();
+            roundStarted = false;
+        }
 
         
         
