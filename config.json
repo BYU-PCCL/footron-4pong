@@ -2,7 +2,7 @@
     "id": "pong4",
     "type": "web",
     "title": "4-Way Pong",
-    "description": "A fresh take on a classic game, play this classic 1v1 game now with 4 players! Scan the QR code to join the game, then the round will start when all players press start. \n\n\n Game Modes: \n Single Player - Bounce the dot to score points \n Multiplayer - Play against others and be the last one standing",
+    "description": "A fresh take on a classic game, play this classic 1v1 game now with 4 players!",
     "artist": "Chris Luangrath",
-    "lifetime": 30
+    "lifetime": 20
 }
