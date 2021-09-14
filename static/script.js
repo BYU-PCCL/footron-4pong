@@ -257,10 +257,6 @@ const interval = setInterval(function () {
     controls();
     if (winner == "") {
         if (!checkStart() && !auto) {
-            // context.fillStyle = "white";
-            // context.fillText("To Begin: All players", windowSize * .03, windowSize * .32);
-            // context.fillText("must press \"Start\"", windowSize * .05, windowSize * .39);
-            // context.closePath();
             document.getElementById("start").style.color = "white";
             roundStarted = false;
             if (availablePlayers.length != 4) return;
@@ -309,21 +305,8 @@ const interval = setInterval(function () {
         winCondition();
 
         if (!gameStarted) {
-            // context.fillStyle = "white";
-            // context.fillText("To Join: ", windowSize * .03, windowSize * .1);
-            // context.fillText("Scan the QR code", windowSize * .05, windowSize * .17);
-            // // context.fillText("(1-4 Players)", windowSize * .05 , windowSize * .21);
-            // context.closePath();
             document.getElementById("join").style.color = "white";
             document.getElementById("gamemodes").style.color = "white";
-
-            // context.fillStyle = "white";
-            // context.fillText("Game Modes:", windowSize * .03 , windowSize * .63);
-            // context.fillText("Single Player: Score points", windowSize * .07 , windowSize * .7);
-            // context.fillText("by bouncing the ball", windowSize * .1 , windowSize * .75);
-            // context.fillText("Multiplayer: Be the", windowSize * .07 , windowSize * .85);
-            // context.fillText("last one standing", windowSize * .1 , windowSize * .9);
-            // context.closePath();
             roundStarted = false;
         } else {
             document.getElementById("join").style.color = "black";
@@ -334,23 +317,14 @@ const interval = setInterval(function () {
 
     } else {
         document.getElementById("gameover").style.visibility = "visible";
-        // context.beginPath();
-        // context.fillStyle = "white";
-        // context.fillText("GAME OVER", windowSize * .1, windowSize * .1);
-        // if (gameMode == "single") context.fillText("Your score is: " + score, windowSize * .1, windowSize * .2);
-        // else context.fillText("Winner is: " + winner.toUpperCase(), windowSize * .03, windowSize * .2);
         if (gameMode == "single") document.getElementById("gameoverDetail").textContent = "Your score is: " + score;
         else document.getElementById("gameoverDetail").textContent = "Winner is: " + winner.toUpperCase();
-        // context.fillText("Thanks for Playing!", windowSize * .1, windowSize * .3);
-        // context.closePath();
         endGame();
         clearInterval(interval);
     }
     if (disconnected) {
-        context.beginPath();
-        context.fillStyle = "white";
-        context.fillText("All Players Disconnected", windowSize * .03, windowSize * .1);
-        context.closePath();
+        document.getElementById("gameover").style.visibility = "visible"
+        document.getElementById("gameoverTitle").textContent = "All Players Disconnected";
     }
     context.beginPath();
     context.fillStyle = "white";
