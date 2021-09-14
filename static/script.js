@@ -12,8 +12,6 @@
  * TODO
  *  - async so you can pause for a couple seconds?
  *  - make code more efficient
- *  - manage disconnects
- *  - make controls better (colors? correct words? etc)
  *  - fix building the paddles (sometimes there's 2 of each and it looks bad)
  *  - Timer + countdown for timer (overall timer, countdown till you have to leave? etc)
  *  - fix controls logic
@@ -26,7 +24,9 @@
 
 /**
  * Done
- *  - 
+ *  - Single Player mode
+ *  - manage disconnects
+ *  - make controls better (colors? correct words? etc)
  *
  */
 
@@ -69,6 +69,11 @@ class Player {
             
         }
         document.getElementById(this.name).style.color = color;
+    }
+
+    displayScore(){
+        document.getElementById(this.name).textContent = score < 10 ? "0" + score : score;
+        document.getElementById(this.name).style.color = "white";
     }
     
     moveHandler(message){
@@ -189,7 +194,6 @@ async function connectionHandler(connection){
 }
 
 function closeHandler(connection){
-    // if we want the existing game to continue:
     newList = [];
     activePlayers.forEach(player => {
         if(connection.getId() != player.connection.getId()){
@@ -206,10 +210,6 @@ function closeHandler(connection){
 
     if(activePlayers.length == 0 && gameStarted){
         disconnected = true;
-        // context.beginPath();
-        // context.fillStyle = "white";
-        // context.fillText("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAzz", 100 * modifier,200 * modifier);
-        // context.closePath();
         endGame();
     }
 
@@ -244,13 +244,12 @@ gameOver = false;
 gameStarted = false;
 moveSpd = 9 * modifier;
 roundStarted = false;
+score = 0;
+readyToScore = true;
 winner = "";
 
 
 const interval = setInterval(function () {
-    // if(playerMap.get("left")){
-    //     console.log(playerMap.get("left").moveState)
-    // }
     buildLines();
     buildBall();
     buildPaddles();
@@ -259,8 +258,8 @@ const interval = setInterval(function () {
     if(winner == ""){
         if (!checkStart() && !auto){
             context.fillStyle = "white";
-            context.fillText("To Start:", windowSize * .07 , windowSize * .3);
-            context.fillText("All players press \"Start\"", windowSize * .1 , windowSize * .35);
+            context.fillText("To Begin: All players", windowSize * .03 , windowSize * .32);
+            context.fillText("must press \"Start\"", windowSize * .05 , windowSize * .39);
             context.closePath();
             roundStarted = false;
             if ( availablePlayers.length != 4) return;
@@ -269,6 +268,7 @@ const interval = setInterval(function () {
             if(!roundStarted){
                 if(activePlayers.length == 1){
                     gameMode = "single";
+                    activePlayers[0].lives = 1;
                 } else {
                     gameMode = "multi";
                 }
@@ -292,17 +292,12 @@ const interval = setInterval(function () {
         // Ball physics
         ballX += ballVX; 
         ballY += ballVY;
-
-
-        // autoplay
-        // autoplay();
-        // crazymode();
         
         // Scoring
         lifeTracking();
 
         // Bouncing
-        bouncing();    
+        bouncing();
 
         // Display Lives
         displayLives();
@@ -313,15 +308,18 @@ const interval = setInterval(function () {
 
         if(!gameStarted){
             context.fillStyle = "white";
-            context.fillText("To Join:", windowSize * .07 , windowSize * .1);
-            context.fillText("Scan the QR code", windowSize * .1 , windowSize * .15);
-            context.fillText("(1-4 Players)", windowSize * .1 , windowSize * .2);
+            context.fillText("To Join: ", windowSize * .03 , windowSize * .1);
+            context.fillText("Scan the QR code", windowSize * .05 , windowSize * .17);
+            // context.fillText("(1-4 Players)", windowSize * .05 , windowSize * .21);
             context.closePath();
 
-            context.fillStyle = "white";
-            context.fillText("Game Modes:", windowSize * .07 , windowSize * .65);
-            context.fillText("Single Player: Score points", windowSize * .1 , windowSize * .7);
-            context.closePath();
+            // context.fillStyle = "white";
+            // context.fillText("Game Modes:", windowSize * .03 , windowSize * .63);
+            // context.fillText("Single Player: Score points", windowSize * .07 , windowSize * .7);
+            // context.fillText("by bouncing the ball", windowSize * .1 , windowSize * .75);
+            // context.fillText("Multiplayer: Be the", windowSize * .07 , windowSize * .85);
+            // context.fillText("last one standing", windowSize * .1 , windowSize * .9);
+            // context.closePath();
             roundStarted = false;
         }
 
@@ -332,7 +330,8 @@ const interval = setInterval(function () {
         context.beginPath();
         context.fillStyle = "white";
         context.fillText("GAME OVER", windowSize * .1 , windowSize * .1);
-        context.fillText("Winner is: " + winner.toUpperCase(), windowSize * .1 , windowSize * .2);
+        if(gameMode == "single") context.fillText("Your score is: " + score, windowSize * .1 , windowSize * .2);
+        else context.fillText("Winner is: " + winner.toUpperCase(), windowSize * .03 , windowSize * .2);
         context.fillText("Thanks for Playing!", windowSize * .1 , windowSize * .3);
         context.closePath();
         endGame();
@@ -341,7 +340,7 @@ const interval = setInterval(function () {
     if(disconnected){
         context.beginPath();
         context.fillStyle = "white";
-        context.fillText("All Players Disconnected", windowSize * .1 , windowSize * .1);
+        context.fillText("All Players Disconnected", windowSize * .03 , windowSize * .1);
         context.closePath();
     }
     context.beginPath();
@@ -354,10 +353,7 @@ const interval = setInterval(function () {
     
     // display speed
     // context.fillText(Math.floor(ballVX) + "," + Math.floor(ballVY), 400 * modifier, 610 * modifier);
-    
-    // for timer
-    // publishEndTime();
-}, 16) // Speed 15
+}, 16)
 
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
@@ -389,27 +385,24 @@ function bouncing(){
     }
     
     bounceSpeed  = 0;
-    if(gameMode == "multi") bounceSpeed = .1;
-    else bounceSpeed = .3; 
+    if(gameMode == "multi"){
+        if(activePlayers.length < 3) bounceSpeed = .5;
+        else bounceSpeed = .3;
+    } 
+    else bounceSpeed = .7; 
 
     if(lBounce){
         if (ballX <= 0) {
             ballX = 0; 
             ballVX = -ballVX;
+            readyToScore = true;
         }
     } else {
-        // TODO
-        // paddleBounce(){
-        //     if(this.name == "left" || this.name == "right"){
-        //         if(ballX <= this.val1 * modifier && ballX >= this.val2 * modifier && ballY < this.paddlePos + 110 * modifier && ballY > this.paddlePos - 10 * modifier){
-        //             ballVX = -ballVX + (bounceSpeed * this.sideMod); 
-        //             ballVY += (ballY - this.paddlePos - 45 * modifier) / 20;
-        //         }
-        //     }
-        // }
         if (ballX <= 40 * modifier && ballX >= 20 * modifier && ballY < playerMap.get("left").paddlePos + 110 * modifier && ballY > playerMap.get("left").paddlePos - 10 * modifier) {
             ballVX = -ballVX + bounceSpeed; 
             ballVY += (ballY - playerMap.get("left").paddlePos - 45 * modifier) / 20;
+            if(gameMode == "single" && readyToScore) score += 1;
+            readyToScore = false;
         }
     }
     
@@ -417,11 +410,14 @@ function bouncing(){
         if (ballX >= wallSize - 10) {
             ballX = wallSize - 10; 
             ballVX =-ballVX;
+            readyToScore = true;
         }
     } else {
         if (ballX <= 610 * modifier && ballX >= 590 * modifier && ballY < playerMap.get("right").paddlePos + 110 * modifier && ballY > playerMap.get("right").paddlePos - 10 * modifier) {
             ballVX = -ballVX - bounceSpeed; 
             ballVY += (ballY - playerMap.get("right").paddlePos - 45 * modifier) / 20;
+            if(gameMode == "single") score += 1;
+            readyToScore = false;
         }
     }
 
@@ -429,11 +425,14 @@ function bouncing(){
         if (ballY <= 0) {
             ballY = 0; 
             ballVY = -ballVY;
+            readyToScore = true;
         }
     } else {
         if (ballY <= 40 * modifier && ballY >= 20 * modifier && ballX < playerMap.get("up").paddlePos + 110 * modifier && ballX > playerMap.get("up").paddlePos - 10 * modifier) {
             ballVY = -ballVY + bounceSpeed; 
             ballVX += (ballX - playerMap.get("up").paddlePos - 45 * modifier) / 20;
+            if(gameMode == "single") score += 1;
+            readyToScore = false;
         }
     }
 
@@ -441,11 +440,14 @@ function bouncing(){
         if (ballY >= wallSize - 10) {
             ballY = wallSize - 10; 
             ballVY = -ballVY;
+            readyToScore = true;
         }
     } else {
         if (ballY <= 610 * modifier && ballY >= 590 * modifier && ballX < playerMap.get("down").paddlePos + 110 * modifier && ballX > playerMap.get("down").paddlePos - 10 * modifier) {
             ballVY = -ballVY - bounceSpeed; 
             ballVX += (ballX - playerMap.get("down").paddlePos - 45 * modifier) / 20;
+            if(gameMode == "single") score += 1;
+            readyToScore = false;
         }
     }
     
@@ -530,21 +532,26 @@ function controls(){
 }
 
 function displayLives(){
-    activePlayers.forEach(player => {
-        player.displayLives();
-    })
+    if(gameMode == "multi"){
+        activePlayers.forEach(player => {
+            player.displayLives();
+        })
+    } else {
+        activePlayers.forEach(player => {
+            player.displayScore();
+        })
+    }
+    
     
 }
 
 async function endGame(){
-    await delay(5000)
+    await delay(7000)
     messaging.setLock(false);
     console.log("Lock Released");
-    // console.log("it worked");
 
 }
 
-// TODO
 function lifeTracking(){
     activePlayers.forEach(player => {
         if(player.isAlive()){
@@ -555,41 +562,6 @@ function lifeTracking(){
                     resetPositions();
                 }
             }
-
-            // if(player.name == "left"){
-            //     if (ballX < -10 * modifier) {
-            //         player.lives--; 
-            //         if(player.isAlive()){
-            //             resetBall("left"); // TODO change this somehow to "player.name"
-            //             resetPositions();
-            //         }
-            //     }
-            // } else if (player.name == "right"){
-            //     if (ballX > 630 * modifier) {
-            //         player.lives--; 
-            //         if(player.isAlive()){
-            //             resetBall("right");
-            //             resetPositions();
-            //         }
-            //     }
-            // } else if (player.name == "up"){
-            //     if (ballY < -10 * modifier) {
-            //         player.lives--; 
-            //         if(player.isAlive()){
-            //             resetBall("up");
-            //             resetPositions();
-            //         }
-            //     }
-            // } else if (player.name == "down"){
-            //     if (ballY > 630 * modifier) {
-            //         player.lives--; 
-                
-            //         if(player.isAlive()){
-            //             resetBall("up");
-            //             resetPositions();
-            //         }
-            //     }
-            // }
         }
     });
 }
@@ -633,7 +605,6 @@ function resetPositions(){
 
 function winCondition(){
     if(roundStarted){
-        // if (activePlayers.length > 1){
         if (gameMode == "multi"){
             oneAlive = false;
             moreAlive = false;
@@ -674,62 +645,4 @@ function winCondition(){
     
 function getRandomArbitrary(min, max) {
     return Math.random() * (max - min) + min;
-}    
-
-function autoplay(){
-    auto = true;
-    range = 25
-        // && ballVX > 0 TODO: fix this for scaling
-        if(paddleYL + 50 - range < ballY && paddleYL + 50 + range > ballY){
-            paddleVL = 0;
-        } else 
-        if(paddleYL + 50 + range >= ballY){
-            paddleVL = -moveSpd;
-        } else if (paddleYL + 50 - range <= ballY){
-            paddleVL = moveSpd;
-        }
-
-        if(paddleYR + 50 - range < ballY && paddleYR + 50 + range > ballY){
-            paddleVR = 0;
-        } else 
-        if (paddleYR + 80 > ballY){
-            paddleVR = -moveSpd;
-        } else if(paddleYR + 20 <= ballY){
-            paddleVR = moveSpd;
-        }
-
-        if(paddleXU + 50 - range < ballX && paddleXU + 50 + range > ballX){
-            paddleVU = 0;
-        } else 
-        if(paddleXU + 50 + range >= ballX){
-            paddleVU = -moveSpd;
-        } else if (paddleXU + 50 - range <= ballX){
-            paddleVU = moveSpd;
-        }
-
-        if(paddleXD + 50 - range < ballX && paddleXD + 50 + range > ballX){
-            paddleVD = 0;
-        } else 
-        if (paddleXD + 80 > ballX){
-            paddleVD = -moveSpd;
-        } else if(paddleXD + 20 <= ballX){
-            paddleVD = moveSpd;
-        }
-
-        // go back to center of wall
-        // if(ballVX > 0){
-        //     if(paddleYL + 50 - 25 < wallSize/2 && paddleYL + 50 + 25 > wallSize/2){
-        //         paddleVL = 0;
-        //     } else if(paddleYL + 50 - 40 > wallSize/2){
-        //         paddleVL = -5;
-        //     } else if(paddleYL + 50 + 40 < wallSize/2){
-        //         paddleVL = 5
-        //     }
-        // } 
-}
-
-function crazymode(){
-    auto = true;
-    paddleYL = paddleYR = ballY - (50 * modifier);
-    paddleXU = paddleXD = ballX - 50 * modifier;
 }
