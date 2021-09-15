@@ -10,6 +10,8 @@
 
 /**
  * TODO
+ *  - speed of ball (4 players)
+ *  - Unknown error on controls
  *  - async so you can pause for a couple seconds?
  *  - make code more efficient
  *  - fix building the paddles (sometimes there's 2 of each and it looks bad)
@@ -27,7 +29,9 @@
  *  - Single Player mode
  *  - manage disconnects
  *  - make controls better (colors? correct words? etc)
- *
+ *  - change death bounce logic
+ *  - fixed pressing start while dead 
+ * 
  */
 
 messaging = new FootronMessaging.Messaging();
@@ -48,6 +52,11 @@ class Player {
         this.paddlePos = wallSize / 2;
         this.paddleVel = 0;
 
+    }
+
+    checkStart(){
+        if(this.isAlive()) return this.startState;
+        else return true;
     }
 
     isAlive() {
@@ -161,6 +170,7 @@ class Player {
 
 
 }
+
 let availablePlayers = ["left", "right", "up", "down"];
 const playerMap = new Map();
 activePlayers = [];
@@ -256,7 +266,7 @@ const interval = setInterval(function () {
     displayLives();
     controls();
     if (winner == "") {
-        if (!checkStart() && !auto) {
+        if (!checkAllStart() && !auto) {
             document.getElementById("start").style.color = "white";
             roundStarted = false;
             if (availablePlayers.length != 4) return;
@@ -343,33 +353,29 @@ const delay = ms => new Promise(res => setTimeout(res, ms));
 function bouncing() {
     lBounce = rBounce = uBounce = dBounce = false;
     if (playerMap.get("left")) {
-        if (playerMap.get("left").isAlive()) {
-        }
+        if (!playerMap.get("left").isAlive()) lBounce = true;
     } else {
         lBounce = true;
     }
     if (playerMap.get("right")) {
-        if (playerMap.get("right").isAlive()) {
-        }
+        if (!playerMap.get("right").isAlive()) rBounce = true;
     } else {
         rBounce = true;
     }
     if (playerMap.get("up")) {
-        if (playerMap.get("up").isAlive()) {
-        }
+        if (!playerMap.get("up").isAlive()) uBounce = true;
     } else {
         uBounce = true;
     }
     if (playerMap.get("down")) {
-        if (playerMap.get("down").isAlive()) {
-        }
+        if (!playerMap.get("down").isAlive()) dBounce = true;
     } else {
         dBounce = true;
     }
 
     bounceSpeed = 0;
     if (gameMode == "multi") {
-        if (activePlayers.length < 3) bounceSpeed = .5;
+        if (activePlayers.length == 2) bounceSpeed = .5;
         else bounceSpeed = .3;
     }
     else bounceSpeed = .7;
@@ -492,10 +498,10 @@ function buildPaddles() {
     }
 }
 
-function checkStart() {
+function checkAllStart() {
     if (activePlayers.length > 0) {
 
-        return activePlayers.every(player => { return player.startState });
+        return activePlayers.every(player => { return player.checkStart() });
     } else {
         return false;
     }
@@ -543,6 +549,8 @@ function lifeTracking() {
                 if (player.isAlive()) {
                     resetBall(player.name);
                     resetPositions();
+                } else {
+                    
                 }
             }
         }
