@@ -27,14 +27,14 @@ const buttonStyle = css`
 
 function getButton1Name(name:(string | undefined)){
   return (name === "left" ? "Up" :
-      name === "right" ? "Up" :
+      name === "right" ? "Down" :
           name === "up" ? "Left" :
               name === "down" ? "Left" :
                   "1")
 }
 function getButton2Name(name:(string | undefined)){
   return (name === "left" ? "Down" :
-      name === "right" ? "Down" :
+      name === "right" ? "Up" :
           name === "up" ? "Right" :
               name === "down" ? "Right" :
                   "2")
