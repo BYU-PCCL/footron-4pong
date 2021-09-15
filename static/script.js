@@ -500,7 +500,6 @@ function buildPaddles() {
 
 function checkAllStart() {
     if (activePlayers.length > 0) {
-
         return activePlayers.every(player => { return player.checkStart() });
     } else {
         return false;
