@@ -50,8 +50,8 @@ class Player {
 
     }
 
-    checkStart(){
-        if(this.isAlive()) return this.startState;
+    checkStart() {
+        if (this.isAlive()) return this.startState;
         else return true;
     }
 
@@ -258,9 +258,9 @@ winner = "";
 
 
 const interval = setInterval(function () {
-    if(activePlayers.length > 0 && !roundStarted) {
+    if (activePlayers.length > 0 && !roundStarted) {
         resetBall();
-        context.clearRect(0,0,wallSize,wallSize);
+        context.clearRect(0, 0, wallSize, wallSize);
     }
     buildBall();
     buildLines();
@@ -281,7 +281,7 @@ const interval = setInterval(function () {
         if (!checkAllStart()) {
             document.getElementById("start").style.color = "white";
             roundStarted = false;
-            
+
             if (availablePlayers.length != 4) return;
         }
         else {
@@ -335,7 +335,7 @@ const interval = setInterval(function () {
         endGame();
         clearInterval(interval);
     }
-    
+
     if (disconnected) {
         document.getElementById("gameover").style.visibility = "visible"
         document.getElementById("gameoverTitle").textContent = "All Players Disconnected";
@@ -553,7 +553,7 @@ function lifeTracking() {
                     resetBall(player.name);
                     resetPositions();
                 } else {
-                    
+
                 }
             }
         }
@@ -562,8 +562,8 @@ function lifeTracking() {
 
 function resetBall(player = "") {
     if (player == "") {
-        ballX = wallSize / 2 -4*modifier; // 2.2 ;//+ 10 * modifier;
-        ballY = wallSize / 2 -4*modifier; // .2; //+ 10 * modifier;
+        ballX = wallSize / 2 - 4 * modifier; // 2.2 ;//+ 10 * modifier;
+        ballY = wallSize / 2 - 4 * modifier; // .2; //+ 10 * modifier;
         // make this random velocity
         ballVX = ballVY = 5;
     } else if (player == "left") {
