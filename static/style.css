@@ -10,6 +10,9 @@ body {
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  /* font-family: 'Barlow', sans-serif; */
+  /* font-family: 'Barlow', sans-serif; */
+  font-family: 'Roboto Mono', monospace;
 }
 
 .main{
@@ -19,9 +22,16 @@ body {
 
 .lives {
   color: black;
-  font-size: 75px;
+  font-size: 60px;
   text-align: center;
   user-select: none;
+  margin: 10px;
+}
+
+.lifeBox {
+  outline: white double 4px;
+  height: 50px;
+  width: 50px;
 }
 
 .text{
@@ -32,9 +42,11 @@ body {
 }
 
 .title{
+  animation: ease-out 2s 0s 1 slideInFromTop;
   width: 50%;
   margin: auto;
   margin-top: 1%;
+  margin-bottom: 0;
 
 }
 
@@ -46,11 +58,13 @@ body {
 #join {
   bottom: 20%;
   left: 3%;
+  animation: ease-in 5s 0s 1 appearSlow;
 }
 
 #gamemodes {
   top: 20%;
   right: 1%;
+  animation: ease-in 5.5s 0s 1 appearSlow;
 }
 
 #gameover {
@@ -66,14 +80,77 @@ body {
 #start {
   top: 20%;
   left: 3%;
+  animation: ease-in 4.5s 0s 1 appearSlow;
 }
 
 .container {
   display: flex;
   flex-direction: row;
   justify-content: center;
+  animation: ease-in 4s 0s 1 appear;
 }
 
 canvas {
   outline: 5px double white;
+  margin: 3px;
+}
+
+@keyframes slideInFromTop {
+  0% {
+    transform: scale(80%);
+      transform: translateY(-500%);
+      
+  }
+  90%{
+    transform: scale(80%);
+  }
+  100% {
+      transform: translateY(0);
+      transform: scale(100%);
+  }
+}
+
+@keyframes slideInFromLeft {
+  0% {
+      transform: translateX(-500%);
+  }
+  100% {
+      transform: translateX(0);
+  }
+}
+
+@keyframes slideInFromRight {
+  0% {
+      transform: translateX(500%);
+  }
+  100% {
+      transform: translateX(0);
+  }
+}
+
+@keyframes appear {
+  0% {
+      opacity: 0;
+  }
+  50% {
+    opacity: 0;
+  }
+  100% {
+      opacity: 100%;
+  }
+}
+
+@keyframes appearSlow {
+  0% {
+      opacity: 0;
+  }
+  50% {
+    opacity: 0;
+  }
+  75% {
+    opacity: 0;
+  }
+  100% {
+      opacity: 100%;
+  }
 }
