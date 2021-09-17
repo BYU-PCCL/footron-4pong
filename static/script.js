@@ -26,11 +26,7 @@
 
 /**
  * Done
- *  - Single Player mode
- *  - manage disconnects
- *  - make controls better (colors? correct words? etc)
- *  - change death bounce logic
- *  - fixed pressing start while dead 
+ *  - space lives out a bit
  * 
  */
 
@@ -78,6 +74,9 @@ class Player {
 
         }
         document.getElementById(this.name).style.color = color;
+        // document.getElementById(this.name).onchange = function(){
+        //     document.getElementById(this.name).style.animation = "animation: ease-in 5s 0s 1 appearSlow;"
+        // }
     }
 
     displayScore() {
@@ -183,7 +182,7 @@ async function connectionHandler(connection) {
     await messaging.setLock(4);
     // console.log(connection.getId());
     if (availablePlayers.length > 0 && !gameStarted) {
-        ballX = ballY = 270 * modifier;
+        resetBall();
         ballVX = Math.abs(ballVX)
         const nextPlayer = availablePlayers.shift();
         connection.addLifecycleListener((paused) => paused || connection.sendMessage({ player: nextPlayer }));
@@ -235,8 +234,6 @@ document.getElementById('canvas').width = wallSize;
 document.getElementById('canvas').height = wallSize;
 context.fillStyle = "#FFF";
 context.font = "45px monospace";
-paused = true;
-// resetPositions();
 ballX = getRandomArbitrary(wallSize * .3, wallSize * .7);
 ballY = getRandomArbitrary(wallSize * .3, wallSize * .7);
 ballVX = 5;
@@ -247,7 +244,6 @@ if (ballY > wallSize / 2) ballVY = - ballVY;
 // ballVY = 1 * getRandomArbitrary(4,8) * modifier;
 
 
-auto = false;
 disconnected = false;
 gameMode = "multi";
 gameOver = false;
@@ -259,16 +255,33 @@ readyToScore = true;
 winner = "";
 
 
+
+
 const interval = setInterval(function () {
-    buildLines();
+    if(activePlayers.length > 0 && !roundStarted) {
+        resetBall();
+        context.clearRect(0,0,wallSize,wallSize);
+    }
     buildBall();
+    buildLines();
     buildPaddles();
     displayLives();
     controls();
+
+    if (!gameStarted) {
+        document.getElementById("join").style.color = "white";
+        document.getElementById("gamemodes").style.color = "white";
+        roundStarted = false;
+    } else {
+        document.getElementById("join").style.color = "black";
+        document.getElementById("gamemodes").style.color = "black";
+    }
+
     if (winner == "") {
-        if (!checkAllStart() && !auto) {
+        if (!checkAllStart()) {
             document.getElementById("start").style.color = "white";
             roundStarted = false;
+            
             if (availablePlayers.length != 4) return;
         }
         else {
@@ -296,7 +309,6 @@ const interval = setInterval(function () {
             player.paddleMovement();
         })
 
-
         // Ball physics
         ballX += ballVX;
         ballY += ballVY;
@@ -314,15 +326,6 @@ const interval = setInterval(function () {
         buildPaddles();
         winCondition();
 
-        if (!gameStarted) {
-            document.getElementById("join").style.color = "white";
-            document.getElementById("gamemodes").style.color = "white";
-            roundStarted = false;
-        } else {
-            document.getElementById("join").style.color = "black";
-            document.getElementById("gamemodes").style.color = "black";
-        }
-
 
 
     } else {
@@ -332,6 +335,7 @@ const interval = setInterval(function () {
         endGame();
         clearInterval(interval);
     }
+    
     if (disconnected) {
         document.getElementById("gameover").style.visibility = "visible"
         document.getElementById("gameoverTitle").textContent = "All Players Disconnected";
@@ -339,7 +343,7 @@ const interval = setInterval(function () {
     context.beginPath();
     context.fillStyle = "white";
     context.closePath();
-    buildBall();
+    buildBall() // displays ball for game
 
     // display ball location
     // context.fillText(Math.floor(ballX) + "," + Math.floor(ballY), 340 * modifier, 550 * modifier);
@@ -534,7 +538,7 @@ function displayLives() {
 }
 
 async function endGame() {
-    await delay(7000)
+    await delay(5000)
     messaging.setLock(false);
     console.log("Lock Released");
 
@@ -558,8 +562,8 @@ function lifeTracking() {
 
 function resetBall(player = "") {
     if (player == "") {
-        ballX = wallSize / 2;
-        ballY = wallSize / 2;
+        ballX = wallSize / 2 -4*modifier; // 2.2 ;//+ 10 * modifier;
+        ballY = wallSize / 2 -4*modifier; // .2; //+ 10 * modifier;
         // make this random velocity
         ballVX = ballVY = 5;
     } else if (player == "left") {
@@ -586,7 +590,6 @@ function resetBall(player = "") {
 }
 
 function resetPositions() {
-    paused = true;
     activePlayers.forEach(player => {
         player.resetPosition();
         player.startState = false;
